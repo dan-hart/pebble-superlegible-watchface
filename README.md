@@ -6,6 +6,10 @@ A minimalist Pebble watchface focused on maximum readability using the Atkinson 
 ![Platforms](https://img.shields.io/badge/platforms-Aplite%20%7C%20Basalt%20%7C%20Chalk%20%7C%20Diorite%20%7C%20Emery-green)
 ![License](https://img.shields.io/badge/license-GPLv3-blue)
 
+<p align="center">
+  <img src="screenshots/watchface.png" alt="Superledgible Watchface" width="300">
+</p>
+
 ## Features
 
 - **Maximum Size**: Time displayed as large as possible
@@ -65,9 +69,15 @@ Your Pebble's time format setting (in Date & Time settings) is automatically res
 
 ## Technical Details
 
-**Font**: Atkinson Hyperlegible Regular
+**Display Method**: Bitmap-based rendering with 2x2 quadrant layout
+- Four individual digit bitmaps (hour tens, hour ones, minute tens, minute ones)
+- Each digit rendered using Atkinson Hyperlegible font at maximum size
+- Optimized for each platform's display dimensions
+- 12h format intelligently hides leading zero for single-digit hours
+
+**Font**: Atkinson Hyperlegible
 - Designed by Braille Institute specifically for legibility
-- 48pt size optimized for Pebble's display
+- Used to generate high-quality digit bitmaps
 - Licensed under SIL Open Font License v1.1
 
 **Supported Platforms**:
