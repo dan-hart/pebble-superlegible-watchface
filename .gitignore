@@ -1,0 +1,25 @@
+# Pebble Build Artifacts
+build/
+*.pbw
+
+# Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Nix
+result
+result-*
+
+# Logs
+*.log
+
+# Temporary Files
+*.tmp
+.cache/

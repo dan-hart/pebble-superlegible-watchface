@@ -1,0 +1,31 @@
+{
+  "uuid": "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+  "shortName": "Superlegible",
+  "longName": "Superlegible",
+  "companyName": "Dan Hart",
+  "versionCode": 1,
+  "versionLabel": "1.0",
+  "watchapp": {
+    "watchface": true
+  },
+  "appKeys": {},
+  "resources": {
+    "media": [
+      {
+        "type": "font",
+        "name": "FONT_ATKINSON_MONO_EXTRABOLD_71",
+        "file": "fonts/AtkinsonHyperlegibleMono-ExtraBold.ttf",
+        "characterRegex": "[0-9]",
+        "trackingAdjust": -3
+      }
+    ]
+  },
+  "targetPlatforms": [
+    "aplite",
+    "basalt",
+    "chalk",
+    "diorite",
+    "emery"
+  ],
+  "sdkVersion": "3"
+}
