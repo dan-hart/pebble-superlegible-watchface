@@ -105,23 +105,26 @@ static void main_window_load(Window *window) {
     text_layer_enable_screen_text_flow_and_paging(s_minute_tens_layer, 5);
     text_layer_enable_screen_text_flow_and_paging(s_minute_ones_layer, 5);
   #else
-    // For rectangular displays
-    // Create quadrant TextLayers:
+    // For rectangular displays - optimize horizontal spacing only
+    // Bring digits closer together horizontally while maintaining full vertical height
+    int16_t h_inset = 16;  // horizontal inset to bring digits closer to center
+
+    // Create quadrant TextLayers (reduced width, full height):
     // Top-left: Hour tens
     s_hour_tens_layer = create_digit_layer(
-      GRect(0, 0, half_width, half_height), s_time_font);
+      GRect(h_inset, 0, half_width - h_inset, half_height), s_time_font);
 
     // Top-right: Hour ones
     s_hour_ones_layer = create_digit_layer(
-      GRect(half_width, 0, half_width, half_height), s_time_font);
+      GRect(half_width, 0, half_width - h_inset, half_height), s_time_font);
 
     // Bottom-left: Minute tens
     s_minute_tens_layer = create_digit_layer(
-      GRect(0, half_height, half_width, half_height), s_time_font);
+      GRect(h_inset, half_height, half_width - h_inset, half_height), s_time_font);
 
     // Bottom-right: Minute ones
     s_minute_ones_layer = create_digit_layer(
-      GRect(half_width, half_height, half_width, half_height), s_time_font);
+      GRect(half_width, half_height, half_width - h_inset, half_height), s_time_font);
   #endif
 
   // Add all layers to the window

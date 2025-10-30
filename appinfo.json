@@ -16,7 +16,7 @@
         "name": "FONT_ATKINSON_MONO_EXTRABOLD_71",
         "file": "fonts/AtkinsonHyperlegibleMono-ExtraBold.ttf",
         "characterRegex": "[0-9]",
-        "trackingAdjust": -3
+        "trackingAdjust": -4
       }
     ]
   },
