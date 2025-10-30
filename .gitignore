@@ -1,6 +1,7 @@
 # Pebble Build Artifacts
 build/
 *.pbw
+.lock-waf*
 
 # Editor Files
 .vscode/

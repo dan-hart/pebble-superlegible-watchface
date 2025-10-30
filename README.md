@@ -4,7 +4,7 @@ A minimalist Pebble watchface focused on maximum readability using the Atkinson 
 
 ![Version](https://img.shields.io/badge/version-1.0-blue)
 ![Platforms](https://img.shields.io/badge/platforms-Aplite%20%7C%20Basalt%20%7C%20Chalk%20%7C%20Diorite%20%7C%20Emery-green)
-![License](https://img.shields.io/badge/license-MIT-lightgrey)
+![License](https://img.shields.io/badge/license-GPLv3-blue)
 
 ## Features
 
@@ -15,18 +15,11 @@ A minimalist Pebble watchface focused on maximum readability using the Atkinson 
 - **Universal**: Works on all 5 Pebble platforms
 - **Battery Efficient**: Updates only once per minute
 
-## Screenshots
-
-*Coming soon - screenshots of the watchface on different platforms*
-
 ## Installation
-
-### From Pebble App Store
-*Coming soon when published to the Pebble app store*
 
 ### Manual Installation
 
-1. Download the `.pbw` file from the [Releases](https://github.com/yourusername/pebble-superledgible-watchface/releases) page
+1. Download the `.pbw` file from the [Releases](https://github.com/dan-hart/pebble-superledgible-watchface/releases) page
 2. Open the Pebble app on your phone
 3. Go to Settings → Apps
 4. Tap "Install Watch App"
@@ -42,7 +35,7 @@ A minimalist Pebble watchface focused on maximum readability using the Atkinson 
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/pebble-superledgible-watchface.git
+git clone https://github.com/dan-hart/pebble-superledgible-watchface.git
 cd pebble-superledgible-watchface
 
 # Build with Nix
@@ -98,8 +91,6 @@ This project follows Pebble development best practices:
 - Battery-efficient updates
 - Comprehensive documentation
 
-See the [technical documentation](https://github.com/yourusername/pebble-superledgible-watchface/tree/main/docs) for detailed information on architecture and design decisions.
-
 ## Contributing
 
 Contributions are welcome! Please:
@@ -117,7 +108,7 @@ Contributions are welcome! Please:
 
 ## License
 
-- **Code**: MIT License (see LICENSE file)
+- **Code**: GNU GPLv3 License (see LICENSE file)
 - **Font**: SIL Open Font License v1.1 (see OFL.txt)
 
 ## Related Projects
@@ -128,7 +119,6 @@ Contributions are welcome! Please:
 
 For issues, questions, or suggestions:
 - Open an issue on GitHub
-- Contact: (your contact method)
 
 ---
 
