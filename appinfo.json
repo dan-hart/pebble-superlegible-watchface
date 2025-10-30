@@ -12,11 +12,54 @@
   "resources": {
     "media": [
       {
-        "type": "font",
-        "name": "FONT_ATKINSON_MONO_EXTRABOLD_71",
-        "file": "fonts/AtkinsonHyperlegibleMono-ExtraBold.ttf",
-        "characterRegex": "[0-9]",
-        "trackingAdjust": -4
+        "type": "bitmap",
+        "name": "DIGIT_0",
+        "file": "images/digit_0.png"
+      },
+      {
+        "type": "bitmap",
+        "name": "DIGIT_1",
+        "file": "images/digit_1.png"
+      },
+      {
+        "type": "bitmap",
+        "name": "DIGIT_2",
+        "file": "images/digit_2.png"
+      },
+      {
+        "type": "bitmap",
+        "name": "DIGIT_3",
+        "file": "images/digit_3.png"
+      },
+      {
+        "type": "bitmap",
+        "name": "DIGIT_4",
+        "file": "images/digit_4.png"
+      },
+      {
+        "type": "bitmap",
+        "name": "DIGIT_5",
+        "file": "images/digit_5.png"
+      },
+      {
+        "type": "bitmap",
+        "name": "DIGIT_6",
+        "file": "images/digit_6.png"
+      },
+      {
+        "type": "bitmap",
+        "name": "DIGIT_7",
+        "file": "images/digit_7.png"
+      },
+      {
+        "type": "bitmap",
+        "name": "DIGIT_8",
+        "file": "images/digit_8.png"
+      },
+      {
+        "type": "bitmap",
+        "name": "DIGIT_9",
+        "file": "images/digit_9.png"
       }
     ]
   },

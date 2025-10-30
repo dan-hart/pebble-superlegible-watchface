@@ -1,18 +1,28 @@
 #include <pebble.h>
 
-// UI Elements - 4 TextLayers for quadrant layout
+// UI Elements - 4 BitmapLayers for individual digits
 static Window *s_main_window;
-static TextLayer *s_hour_tens_layer;
-static TextLayer *s_hour_ones_layer;
-static TextLayer *s_minute_tens_layer;
-static TextLayer *s_minute_ones_layer;
-static GFont s_time_font;
+static BitmapLayer *s_hour_tens_layer;
+static BitmapLayer *s_hour_ones_layer;
+static BitmapLayer *s_minute_tens_layer;
+static BitmapLayer *s_minute_ones_layer;
 
-// Buffers for individual digits
-static char s_hour_tens_buffer[2];
-static char s_hour_ones_buffer[2];
-static char s_minute_tens_buffer[2];
-static char s_minute_ones_buffer[2];
+// Bitmaps for digits 0-9
+static GBitmap *s_digit_bitmaps[10];
+
+// Resource IDs for digit bitmaps
+static const uint32_t DIGIT_RESOURCE_IDS[] = {
+  RESOURCE_ID_DIGIT_0,
+  RESOURCE_ID_DIGIT_1,
+  RESOURCE_ID_DIGIT_2,
+  RESOURCE_ID_DIGIT_3,
+  RESOURCE_ID_DIGIT_4,
+  RESOURCE_ID_DIGIT_5,
+  RESOURCE_ID_DIGIT_6,
+  RESOURCE_ID_DIGIT_7,
+  RESOURCE_ID_DIGIT_8,
+  RESOURCE_ID_DIGIT_9
+};
 
 // Update the time display
 static void update_time() {
@@ -22,50 +32,45 @@ static void update_time() {
 
   // Get hours based on 12h/24h preference
   int hours;
+  int hour_tens, hour_ones;
+
   if (clock_is_24h_style()) {
     hours = tick_time->tm_hour;
+    hour_tens = hours / 10;
+    hour_ones = hours % 10;
   } else {
     // Convert to 12-hour format
     hours = tick_time->tm_hour % 12;
     if (hours == 0) {
       hours = 12;  // Midnight/noon should display as 12
     }
+    hour_tens = hours / 10;
+    hour_ones = hours % 10;
   }
 
+  // Get minutes
   int minutes = tick_time->tm_min;
-
-  // Extract individual digits
-  int hour_tens = hours / 10;
-  int hour_ones = hours % 10;
   int minute_tens = minutes / 10;
   int minute_ones = minutes % 10;
 
-  // Convert digits to strings
-  snprintf(s_hour_tens_buffer, sizeof(s_hour_tens_buffer), "%d", hour_tens);
-  snprintf(s_hour_ones_buffer, sizeof(s_hour_ones_buffer), "%d", hour_ones);
-  snprintf(s_minute_tens_buffer, sizeof(s_minute_tens_buffer), "%d", minute_tens);
-  snprintf(s_minute_ones_buffer, sizeof(s_minute_ones_buffer), "%d", minute_ones);
+  // Update all four bitmap layers
+  // In 12h format, hide hour_tens if it's 0 (e.g., for times like 2:23)
+  if (!clock_is_24h_style() && hour_tens == 0) {
+    bitmap_layer_set_bitmap(s_hour_tens_layer, NULL);
+    layer_set_hidden(bitmap_layer_get_layer(s_hour_tens_layer), true);
+  } else {
+    bitmap_layer_set_bitmap(s_hour_tens_layer, s_digit_bitmaps[hour_tens]);
+    layer_set_hidden(bitmap_layer_get_layer(s_hour_tens_layer), false);
+  }
 
-  // Update all four TextLayers
-  text_layer_set_text(s_hour_tens_layer, s_hour_tens_buffer);
-  text_layer_set_text(s_hour_ones_layer, s_hour_ones_buffer);
-  text_layer_set_text(s_minute_tens_layer, s_minute_tens_buffer);
-  text_layer_set_text(s_minute_ones_layer, s_minute_ones_buffer);
+  bitmap_layer_set_bitmap(s_hour_ones_layer, s_digit_bitmaps[hour_ones]);
+  bitmap_layer_set_bitmap(s_minute_tens_layer, s_digit_bitmaps[minute_tens]);
+  bitmap_layer_set_bitmap(s_minute_ones_layer, s_digit_bitmaps[minute_ones]);
 }
 
 // Tick handler - called every minute
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_time();
-}
-
-// Helper function to create and configure a digit TextLayer
-static TextLayer* create_digit_layer(GRect frame, GFont font) {
-  TextLayer *layer = text_layer_create(frame);
-  text_layer_set_background_color(layer, GColorBlack);
-  text_layer_set_text_color(layer, GColorWhite);
-  text_layer_set_font(layer, font);
-  text_layer_set_text_alignment(layer, GTextAlignmentCenter);
-  return layer;
 }
 
 // Window load handler
@@ -74,64 +79,64 @@ static void main_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  // Load custom font (ExtraBold Mono for maximum readability and even spacing)
-  s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ATKINSON_MONO_EXTRABOLD_71));
+  // Load all digit bitmaps
+  for (int i = 0; i < 10; i++) {
+    s_digit_bitmaps[i] = gbitmap_create_with_resource(DIGIT_RESOURCE_IDS[i]);
+  }
 
-  // Calculate quadrant dimensions
-  int16_t half_width = bounds.size.w / 2;
-  int16_t half_height = bounds.size.h / 2;
+  // Calculate quadrant dimensions (2x2 grid)
+  int16_t quadrant_width = bounds.size.w / 2;   // 72px
+  int16_t quadrant_height = bounds.size.h / 2;  // 84px
 
-  // Platform-specific positioning
   #ifdef PBL_ROUND
-    // For round displays (Chalk), adjust positioning to avoid edge clipping
-    // Use slightly smaller quadrants with padding
+    // For round displays, use padding in quadrant layout
     int16_t padding = 10;
-    half_width = (bounds.size.w - 2 * padding) / 2;
-    half_height = (bounds.size.h - 2 * padding) / 2;
+    int16_t adjusted_width = (bounds.size.w - 2 * padding) / 2;
+    int16_t adjusted_height = (bounds.size.h - 2 * padding) / 2;
 
-    // Create quadrant TextLayers
-    s_hour_tens_layer = create_digit_layer(
-      GRect(padding, padding, half_width, half_height), s_time_font);
-    s_hour_ones_layer = create_digit_layer(
-      GRect(padding + half_width, padding, half_width, half_height), s_time_font);
-    s_minute_tens_layer = create_digit_layer(
-      GRect(padding, padding + half_height, half_width, half_height), s_time_font);
-    s_minute_ones_layer = create_digit_layer(
-      GRect(padding + half_width, padding + half_height, half_width, half_height), s_time_font);
+    // Top-left quadrant: hour tens
+    s_hour_tens_layer = bitmap_layer_create(GRect(padding, padding, adjusted_width, adjusted_height));
 
-    // Enable text flow for round displays
-    text_layer_enable_screen_text_flow_and_paging(s_hour_tens_layer, 5);
-    text_layer_enable_screen_text_flow_and_paging(s_hour_ones_layer, 5);
-    text_layer_enable_screen_text_flow_and_paging(s_minute_tens_layer, 5);
-    text_layer_enable_screen_text_flow_and_paging(s_minute_ones_layer, 5);
+    // Top-right quadrant: hour ones
+    s_hour_ones_layer = bitmap_layer_create(GRect(padding + adjusted_width, padding, adjusted_width, adjusted_height));
+
+    // Bottom-left quadrant: minute tens
+    s_minute_tens_layer = bitmap_layer_create(GRect(padding, padding + adjusted_height, adjusted_width, adjusted_height));
+
+    // Bottom-right quadrant: minute ones
+    s_minute_ones_layer = bitmap_layer_create(GRect(padding + adjusted_width, padding + adjusted_height, adjusted_width, adjusted_height));
   #else
-    // For rectangular displays - optimize horizontal spacing only
-    // Bring digits closer together horizontally while maintaining full vertical height
-    int16_t h_inset = 16;  // horizontal inset to bring digits closer to center
+    // For rectangular displays - 2x2 quadrant grid
+    // Top-left quadrant: hour tens
+    s_hour_tens_layer = bitmap_layer_create(GRect(0, 0, quadrant_width, quadrant_height));
 
-    // Create quadrant TextLayers (reduced width, full height):
-    // Top-left: Hour tens
-    s_hour_tens_layer = create_digit_layer(
-      GRect(h_inset, 0, half_width - h_inset, half_height), s_time_font);
+    // Top-right quadrant: hour ones
+    s_hour_ones_layer = bitmap_layer_create(GRect(quadrant_width, 0, quadrant_width, quadrant_height));
 
-    // Top-right: Hour ones
-    s_hour_ones_layer = create_digit_layer(
-      GRect(half_width, 0, half_width - h_inset, half_height), s_time_font);
+    // Bottom-left quadrant: minute tens
+    s_minute_tens_layer = bitmap_layer_create(GRect(0, quadrant_height, quadrant_width, quadrant_height));
 
-    // Bottom-left: Minute tens
-    s_minute_tens_layer = create_digit_layer(
-      GRect(h_inset, half_height, half_width - h_inset, half_height), s_time_font);
-
-    // Bottom-right: Minute ones
-    s_minute_ones_layer = create_digit_layer(
-      GRect(half_width, half_height, half_width - h_inset, half_height), s_time_font);
+    // Bottom-right quadrant: minute ones
+    s_minute_ones_layer = bitmap_layer_create(GRect(quadrant_width, quadrant_height, quadrant_width, quadrant_height));
   #endif
 
+  // Configure all bitmap layers
+  bitmap_layer_set_compositing_mode(s_hour_tens_layer, GCompOpSet);
+  bitmap_layer_set_compositing_mode(s_hour_ones_layer, GCompOpSet);
+  bitmap_layer_set_compositing_mode(s_minute_tens_layer, GCompOpSet);
+  bitmap_layer_set_compositing_mode(s_minute_ones_layer, GCompOpSet);
+
+  // Set background color to black for all layers
+  bitmap_layer_set_background_color(s_hour_tens_layer, GColorBlack);
+  bitmap_layer_set_background_color(s_hour_ones_layer, GColorBlack);
+  bitmap_layer_set_background_color(s_minute_tens_layer, GColorBlack);
+  bitmap_layer_set_background_color(s_minute_ones_layer, GColorBlack);
+
   // Add all layers to the window
-  layer_add_child(window_layer, text_layer_get_layer(s_hour_tens_layer));
-  layer_add_child(window_layer, text_layer_get_layer(s_hour_ones_layer));
-  layer_add_child(window_layer, text_layer_get_layer(s_minute_tens_layer));
-  layer_add_child(window_layer, text_layer_get_layer(s_minute_ones_layer));
+  layer_add_child(window_layer, bitmap_layer_get_layer(s_hour_tens_layer));
+  layer_add_child(window_layer, bitmap_layer_get_layer(s_hour_ones_layer));
+  layer_add_child(window_layer, bitmap_layer_get_layer(s_minute_tens_layer));
+  layer_add_child(window_layer, bitmap_layer_get_layer(s_minute_ones_layer));
 
   // Set window background to black
   window_set_background_color(window, GColorBlack);
@@ -139,14 +144,16 @@ static void main_window_load(Window *window) {
 
 // Window unload handler
 static void main_window_unload(Window *window) {
-  // Destroy all TextLayers
-  text_layer_destroy(s_hour_tens_layer);
-  text_layer_destroy(s_hour_ones_layer);
-  text_layer_destroy(s_minute_tens_layer);
-  text_layer_destroy(s_minute_ones_layer);
+  // Destroy all BitmapLayers
+  bitmap_layer_destroy(s_hour_tens_layer);
+  bitmap_layer_destroy(s_hour_ones_layer);
+  bitmap_layer_destroy(s_minute_tens_layer);
+  bitmap_layer_destroy(s_minute_ones_layer);
 
-  // Unload custom font
-  fonts_unload_custom_font(s_time_font);
+  // Unload all digit bitmaps
+  for (int i = 0; i < 10; i++) {
+    gbitmap_destroy(s_digit_bitmaps[i]);
+  }
 }
 
 // Initialize the app
