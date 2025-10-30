@@ -7,10 +7,11 @@ This file provides guidance to Claude Code when working with the Pebble Superled
 **Superledgible** is a minimalist Pebble watchface focused on maximum readability using the Atkinson Hyperlegible font. The design philosophy is simple: display the time as large as possible with maximum legibility, nothing else.
 
 **Key Features:**
-- Four-digit time display using quadrant layout (2×2 grid)
+- Two-row time display (HH on top, MM on bottom)
 - Atkinson Hyperlegible Mono font for exceptional readability
-- Automatic 12h/24h format detection
+- Automatic 12h/24h format detection (no leading zero for 12h hours)
 - Universal support for all 5 Pebble platforms
+- Platform-specific optimization (larger fonts on rectangular displays)
 - Battery efficient (updates once per minute)
 
 ## Technical Constraints
@@ -32,16 +33,21 @@ Exception: Glyph too large! codepoint 48: 263 > 256
 ```
 
 #### 2. Maximum Achievable Font Size
-Through testing, the maximum viable configuration is:
+
+**For Rectangular Displays (Current Configuration):**
 - **71pt Atkinson Hyperlegible Mono ExtraBold**
 - Results in glyphs approximately 95px tall
-- Monospace digit width approximately 57-67px
-- Stays safely under 256-byte glyph limit
+- Stays safely under 256-byte glyph limit (~253 bytes)
+- Bold strokes provide maximum readability and legibility
 
-**Why Not Larger:**
-- 72pt ExtraBold = 263 bytes (exceeds limit)
-- 75pt Regular = exceeds glyph limit (280 bytes)
-- 80pt+ = glyph limit exceeded regardless of weight
+**For Round Displays (Chalk):**
+- Can use smaller font size if needed for text flow
+- Platform-specific configuration via `#ifdef PBL_ROUND`
+
+**Glyph Size Limits by Weight:**
+- **ExtraBold**: 71pt maximum (72pt = 263 bytes, exceeds limit)
+- **Regular**: 75pt maximum (76pt = 265 bytes, exceeds limit)
+- **80pt**: Exceeds limit for all weights (294 bytes for Regular)
 
 #### 3. Platform Display Resolutions
 
@@ -54,35 +60,45 @@ Through testing, the maximum viable configuration is:
 | Chalk (Time Round) | 180×180 | Square | Round |
 
 **Impact on Layout:**
-- Rectangular displays use quadrant optimization (h_inset)
+- Rectangular displays use two-row layout (full width rows)
 - Round display requires padding and text flow
-- All platforms share the same font resource (must work for all)
+- Platform-specific font sizes can be configured via `#ifdef PBL_ROUND`
+
+**IMPORTANT OPTIMIZATION DIRECTIVE:**
+> **Do not let circular display limitations constrain rectangular display optimization.**
+> While the watchface must support all platforms, rectangular displays (aplite, basalt, diorite, emery) represent the majority of Pebble devices and should be optimized for maximum font size and readability. Use platform-specific code (`#ifdef PBL_ROUND`) to provide appropriate handling for circular displays without compromising rectangular display performance. The rectangular displays should always use the largest possible font size that fits within the 256-byte glyph limit.
 
 ### Font Rendering Characteristics
 
 #### Font Baseline Behavior
 The 71pt ExtraBold font has specific rendering characteristics:
 - Digits sit **high** in their bounding box due to font baseline
-- Using asymmetric vertical insets causes **clipping at the bottom**
-- Horizontal-only insets are safe and effective
+- Font height (≈95px) fits well within vertical space on all displays
+- Two-row layout with vertical alignment brings time closer to center
+- Center alignment handles single-digit hours in 12h format
 
-**Why Vertical Insets Don't Work:**
+**Two-Row Layout with Vertical Alignment:**
 ```
 Example with 71pt font on 144×168 display:
-- Half height = 84px per quadrant
-- Font height ≈ 95px (taller than quadrant)
-- Adding vertical inset (e.g., v_inset=10) reduces box to 74px
-- Result: Bottom of digits get clipped
+- Half height = 84px (midpoint)
+- Font height = 105px (used for positioning - oversized for tight centering)
+- Hours: positioned at bottom of top half (y = 84 - 105 = -21)
+- Minutes: positioned at top of bottom half (y = 84)
+- This brings HH and MM very close together with minimal gap
+- Full-width rows (144px) provide ample horizontal space
+- Center alignment automatically handles variable digit widths
 ```
 
 **Solution:**
-Use horizontal insets only to maintain full vertical height.
+Two-row layout with vertical alignment positioning and center horizontal alignment.
 
 #### Monospace Digit Width
 For 71pt ExtraBold:
 - Approximate digit width: 60-70% of height
 - Height ≈ 95px → Width ≈ 57-67px
-- Tracking adjustment of -4 brings digits even closer
+- Tracking adjustment of -4 brings digits closer together
+- Monospace ensures all digits have identical width
+- Bold strokes enhance readability at this size
 
 ## Current Optimal Configuration
 
@@ -93,14 +109,16 @@ For 71pt ExtraBold:
   "type": "font",
   "name": "FONT_ATKINSON_MONO_EXTRABOLD_71",
   "file": "fonts/AtkinsonHyperlegibleMono-ExtraBold.ttf",
+  "targetSize": 71,
   "characterRegex": "[0-9]",
   "trackingAdjust": -4
 }
 ```
 
 **Why These Values:**
-- **71pt**: Maximum size under glyph limit (256 bytes)
-- **ExtraBold**: Maximum weight for maximum readability
+- **71pt**: Maximum size under glyph limit for ExtraBold weight (~253 bytes / 256 bytes max)
+- **ExtraBold weight**: Boldest monospace font for maximum readability and legibility
+- **targetSize: 71**: Explicit size specification for consistency
 - **trackingAdjust: -4**: Tightest spacing without digit overlap
 - **[0-9] only**: Reduces memory usage (only need digits)
 
@@ -108,51 +126,51 @@ For 71pt ExtraBold:
 
 **Rectangular Displays** (aplite, basalt, diorite, emery):
 ```c
-int16_t h_inset = 16;  // horizontal inset
+int16_t half_height = bounds.size.h / 2;
+int16_t font_approx_height = 105;  // Oversized for maximum tight centering
 
-// Quadrant calculations:
-// - Box width: half_width - h_inset
-//   - For 144px wide: 72 - 16 = 56px per digit
-// - Box height: half_height (full vertical space)
-//   - For 168px tall: 84px per quadrant
+// Vertically-aligned two-row layout:
+// - Hours: bottom-aligned in top half
+//   y = half_height - font_height (brings hours down to meet center)
+// - Minutes: top-aligned in bottom half
+//   y = half_height (starts right at center)
+// This minimizes gap between HH and MM
 
-// Positioning:
-// Top-left (hour tens):      x=16,  y=0,   w=56, h=84
-// Top-right (hour ones):     x=72,  y=0,   w=56, h=84
-// Bottom-left (minute tens):  x=16,  y=84,  w=56, h=84
-// Bottom-right (minute ones): x=72,  y=84,  w=56, h=84
+// For 144×168 display:
+// - Hours:   x=0, y=-21, w=144, h=105 (bottom-aligned in top half)
+// - Minutes: x=0, y=84,  w=144, h=105 (top-aligned in bottom half)
+
+// Text is horizontally center-aligned within each full-width row
+// Single-digit hours (12h format) are automatically centered
 ```
 
 **Round Display** (chalk):
 ```c
 int16_t padding = 10;  // uniform padding
 
-// Reduced quadrant size with padding:
-half_width = (bounds.size.w - 2 * padding) / 2;
-half_height = (bounds.size.h - 2 * padding) / 2;
+// Two-row layout with padding:
+// - Top row: x=padding, y=padding, w=bounds.size.w - 2*padding, h=half_height - padding
+// - Bottom row: x=padding, y=half_height, w=bounds.size.w - 2*padding, h=half_height - padding
 
 // Enable text flow for edge wrapping:
 text_layer_enable_screen_text_flow_and_paging(layer, 5);
 ```
 
-### Why h_inset = 16?
+### Why Two-Row Layout?
 
-| h_inset | Box Width (144×168) | Horizontal Shift | Safety | Notes |
-|---------|---------------------|------------------|--------|-------|
-| 0px | 72px | 0px (baseline) | ✅ Safe | Full quadrants, digits far apart |
-| 8px | 64px | 16px closer | ✅ Safe | Conservative optimization |
-| 10px | 62px | 20px closer | ✅ Works | Moderate compression |
-| 12px | 60px | 24px closer | ⚠️ Edge | Approaching limit |
-| 14px | 58px | 28px closer | ⚠️ Risk | High compression |
-| **16px** | **56px** | **32px closer** | ⚠️ **Aggressive** | **Current setting - works but tight** |
-| 18px | 54px | 36px closer | ❌ Risk | May cause overlap/clipping |
+**Benefits:**
+- **Simpler code**: 2 text layers instead of 4
+- **Natural digit pairing**: HH and MM are visually grouped
+- **Maximum horizontal space**: Full display width (144px) for each row
+- **Automatic centering**: Single-digit hours in 12h format center automatically
+- **Font tracking handles spacing**: -4 tracking brings digits in each pair close together
+- **Larger fonts possible**: More vertical space allows for taller fonts
 
-**Rationale for 16px:**
-- Brings time digits significantly closer to center
-- 56px box width accommodates 57-67px digit width with tight tracking (-4)
-- Maximizes visual impact on small display
-- Tested and verified with all digits 0-9
-- No clipping or overlap observed
+**Evolution of Layout:**
+- **Original**: 4 separate single-digit layers with h_inset optimization
+- **Intermediate**: 2 two-digit layers with full-width rows, 75pt Regular
+- **Current**: 2 two-digit layers with vertical alignment, 71pt ExtraBold
+- **Result**: Bolder, more readable font with time centered vertically
 
 ## Optimization History
 
@@ -168,8 +186,9 @@ Error: Glyph too large! codepoint 48: 263 > 256
 
 #### Attempt 2: Use Regular Weight for Larger Size
 **Goal**: Try 75pt Regular to achieve larger visual size
-**Result**: ⚠️ Partial - fits glyph limit but thinner, may clip on small displays
-**Learning**: Weight vs size trade-off; ExtraBold preferred for readability
+**Result**: ⚠️ Partial - fits glyph limit but thinner strokes reduce readability
+**Learning**: Weight vs size trade-off exists, but was later reconsidered
+**Status**: Superseded by Attempt 6
 
 #### Attempt 3: Asymmetric Vertical Insets for Centering
 **Goal**: Use asymmetric vertical insets (6px top, 18px bottom) to center digits better
@@ -185,36 +204,50 @@ Error: Glyph too large! codepoint 48: 263 > 256
 **Goal**: Reduce box width to bring digits closer horizontally while maintaining full vertical height
 **Result**: ✅ Success - tested h_inset values from 8px to 16px
 **Learning**: Horizontal optimization is safe; vertical optimization causes clipping
+**Status**: Superseded by Attempt 6 which uses full-width rows
+
+#### Attempt 6: ExtraBold Font with Vertical Alignment (CURRENT)
+**Goal**: Prioritize font boldness for readability; use vertical alignment to center time
+**Result**: ✅ Success - 71pt ExtraBold with hours bottom-aligned and minutes top-aligned
+**Learning**: Bold weight is more important than size for readability; vertical alignment eliminates gap between HH and MM without clipping
+**Implementation**:
+- Font: 71pt ExtraBold (vs previous 75pt Regular)
+- Hours: y = half_height - font_height (bottom-aligned in top half)
+- Minutes: y = half_height (top-aligned in bottom half)
+- Full-width rows (no h_inset needed)
+- Result: Maximum boldness with centered time display
 
 ### What Works
 
-✅ **ExtraBold at 71pt**: Maximum size within glyph limit, excellent readability
+✅ **ExtraBold at 71pt**: Maximum size within glyph limit, excellent readability with bold strokes
 ✅ **Tracking adjustment of -4**: Tight, visually appealing spacing
-✅ **Horizontal insets (h_inset=8 to 16)**: Brings digits closer to center
-✅ **Full vertical height**: No vertical insets prevents clipping
+✅ **Vertical alignment positioning**: Hours at bottom of top half, minutes at top of bottom half
+✅ **Full-width rows**: Provides maximum horizontal space, no h_inset needed
 ✅ **Platform-specific handling**: Round vs rectangular optimization
-✅ **Center text alignment**: Works well with reduced box width
+✅ **Center horizontal alignment**: Works perfectly with full-width rows and variable-width hours (12h format)
 
 ### What Doesn't Work
 
 ❌ **Fonts larger than 71pt ExtraBold**: Exceeds 256-byte glyph limit
 ❌ **Asymmetric vertical insets**: Causes clipping with tall fonts
-❌ **Regular weight at 75pt+**: Exceeds glyph limit (280 bytes)
+❌ **Regular weight at 75pt+**: Exceeds glyph limit (280 bytes); also less readable than smaller ExtraBold
 ❌ **Tracking tighter than -4**: Risk of digit overlap
-❌ **h_inset > 16px**: Box width becomes too narrow for digit width
+❌ **Simple centered layout**: Leaves large gap between hours and minutes
 ❌ **Same layout for round and rectangular**: Round displays need special handling
 
 ## Layout Reference Tables
 
 ### Horizontal Inset Testing (144×168 Rectangular Displays)
 
+**Note**: Current configuration uses full-width rows (h_inset = 0) with vertical alignment instead of horizontal insets.
+
 | h_inset | Box Width | Per-Digit Shift | Total Shift (4 digits) | Tested | Result |
 |---------|-----------|-----------------|------------------------|--------|--------|
-| 0px | 72px | 0px | 0px | ✅ Yes | ✅ Safe baseline |
-| 8px | 64px | 4px | 16px | ✅ Yes | ✅ Conservative improvement |
-| 10px | 62px | 5px | 20px | ✅ Yes | ✅ Moderate compression |
-| 16px | 56px | 8px | 32px | ✅ Yes | ⚠️ Aggressive (current) |
-| 18px | 54px | 9px | 36px | ❌ No | ⚠️ Untested - may be too tight |
+| **0px** | **144px (full)** | **0px** | **0px** | ✅ Yes | ✅ **Current - full width** |
+| 8px | 128px | 4px | 16px | ✅ Yes | ✅ Conservative (deprecated) |
+| 10px | 124px | 5px | 20px | ✅ Yes | ✅ Moderate (deprecated) |
+| 16px | 112px | 8px | 32px | ✅ Yes | ⚠️ Aggressive (deprecated) |
+| 18px | 108px | 9px | 36px | ❌ No | ⚠️ Untested - may be too tight |
 
 ### Font Size Testing (Atkinson Hyperlegible Mono ExtraBold)
 
@@ -277,25 +310,38 @@ nix-shell --run "pebble install --phone <IP_ADDRESS>"
 
 ### Making Layout Changes
 
-**To adjust horizontal spacing:**
+**To adjust vertical alignment:**
 
-1. **Edit `src/main.c`** line 110:
+1. **Edit `src/main.c`** around line 71:
    ```c
-   int16_t h_inset = 16;  // Change this value
+   int16_t font_approx_height = 105;  // Adjust this value
    ```
 
 2. **Safe ranges:**
-   - **0-10px**: Conservative (safe)
-   - **11-16px**: Aggressive (current range)
-   - **17+px**: High risk (untested)
+   - **95-105px**: Safe range for 71pt ExtraBold (current: 105px for maximum tight centering)
+   - Increase to bring time closer together (tighter gap)
+   - Decrease to add more gap between hours and minutes
+   - 105px provides optimal tight centering with minimal gap
 
-3. **Test thoroughly** - check all digits 0-9
+3. **Test thoroughly** - check for clipping on all platforms
+
+4. **Automated screenshot testing** (optional):
+   ```bash
+   # Build and install
+   nix-shell --run "pebble build && pebble install --emulator basalt"
+
+   # Capture screenshot with Peekaboo
+   sleep 1 && peekaboo image --app "qemu-pebble" --path /tmp/watchface.png
+
+   # View the screenshot
+   open /tmp/watchface.png
+   ```
 
 **To adjust font size:**
 
 1. **Check glyph size first** - 71pt ExtraBold is the maximum
 2. **Edit `appinfo.json`** - change font name, file, and size
-3. **Update `src/main.c` line 78** - update resource ID to match
+3. **Update `src/main.c` line 65** - update resource ID to match
 4. **Rebuild and test immediately** - glyph limit errors appear at build time
 
 **To adjust tracking:**
@@ -314,11 +360,14 @@ nix-shell --run "pebble install --phone <IP_ADDRESS>"
 
 When the user says:
 - **"Test larger font"** → Check glyph size limit (256 bytes max); 71pt ExtraBold is the maximum
-- **"Move digits closer"** → Adjust `h_inset` value (currently 16px, range 0-18px)
-- **"Vertical centering issue"** → Remind about font baseline problems; avoid vertical insets
+- **"Move time closer to center"** → Adjust `font_approx_height` value (currently 105px for maximum tight centering)
+- **"Add more gap"** → Decrease `font_approx_height` (try 95-100px)
+- **"Make font bolder"** → Already using ExtraBold (boldest available monospace)
+- **"Vertical centering issue"** → Adjust vertical alignment positioning via `font_approx_height`
 - **"Build and test"** → Use nix-shell with pebble CLI
 - **"Different platform"** → Use `--emulator <platform>` flag
-- **"Make digits larger"** → Explain 71pt is maximum due to glyph limit
+- **"Make digits larger"** → Explain 71pt is maximum due to glyph limit for ExtraBold weight
+- **"Take a screenshot"** → Use Peekaboo: `peekaboo image --app "qemu-pebble" --path /tmp/watchface.png`
 
 ## Known Issues and Gotchas
 
@@ -328,11 +377,11 @@ When the user says:
 **Solution**: Use 71pt ExtraBold (maximum safe size)
 **Prevention**: Don't exceed 71pt for ExtraBold weight
 
-### 2. Asymmetric Insets Cause Clipping
-**Symptom**: Bottom of digits cut off on display (MM digits clipped)
-**Cause**: Vertical insets reduce box height below font height; font baseline positioning
-**Solution**: Use horizontal insets only (`h_inset`); maintain full vertical height
-**Prevention**: Never reduce quadrant height with vertical insets for tall fonts
+### 2. Vertical Positioning and Clipping
+**Symptom**: Top or bottom of digits cut off on display
+**Cause**: Incorrect `font_approx_height` value or positioning calculation
+**Solution**: Adjust `font_approx_height` to optimal value (105px for maximum tight centering)
+**Prevention**: Use safe height values (95-105px range) and test on all platforms; use Peekaboo for automated screenshot verification
 
 ### 3. Font Baseline Positioning
 **Symptom**: Digits appear to sit high in their boxes
@@ -403,15 +452,15 @@ When the user says:
 - **Solution**: Use 71pt ExtraBold (maximum safe size)
 - **Prevention**: Don't exceed 71pt for ExtraBold weight
 
-### Digits Clipped at Bottom (MM digits cut off)
-- **Cause**: Vertical insets reducing box height
-- **Solution**: Remove vertical insets; use horizontal insets only
-- **Prevention**: Never reduce quadrant height with tall fonts
+### Digits Clipped at Top or Bottom
+- **Cause**: Incorrect `font_approx_height` value
+- **Solution**: Adjust `font_approx_height` to match actual font dimensions
+- **Prevention**: Use conservative height estimates and test on all platforms
 
 ### Digits Overlapping
-- **Cause**: Tracking too tight or h_inset too large
-- **Solution**: Reduce tracking (make less negative) or reduce h_inset
-- **Prevention**: Test with all digits 0-9 after layout changes
+- **Cause**: Tracking too tight (more negative than -4)
+- **Solution**: Reduce tracking (make less negative, e.g., from -5 to -4)
+- **Prevention**: Test with all digits 0-9 after tracking changes; -4 is optimal
 
 ### Round Display Clipping at Edges
 - **Cause**: Missing text flow or insufficient padding
@@ -425,6 +474,32 @@ When the user says:
 
 ---
 
-**Last Updated**: 2025-10-30 (initial documentation)
+**Last Updated**: 2025-10-30
+**Version**: 2.2 (Maximum tight centering + screenshot automation)
 **Maintainer**: Dan Hart
 **Claude Code**: This file is optimized for Claude Code assistance
+
+## Changelog
+
+### 2025-10-30 v2.2 - Maximum Tight Centering + Screenshot Automation
+- Increased `font_approx_height` from 95px to **105px** for maximum tight centering
+- Hours now positioned at y=-21, bringing rows significantly closer together
+- Added **Peekaboo screenshot automation** workflow for visual testing
+- Documented automated testing process: build → install → capture → verify
+
+### 2025-10-30 v2.1 - Tighter Vertical Centering
+- Increased `font_approx_height` from 90px to **95px** for minimal gap
+- Hours and minutes now positioned closer together for better symmetry around center
+- Matches actual font height for optimal vertical centering
+
+### 2025-10-30 v2.0 - ExtraBold with Vertical Alignment
+- Switched from 75pt Regular to **71pt ExtraBold** for maximum readability
+- Implemented **vertical alignment**: hours bottom-aligned in top half, minutes top-aligned in bottom half
+- Removed horizontal insets (h_inset); now using full-width rows
+- Time display now centered vertically with minimal gap between HH and MM
+- Bold strokes significantly improve legibility at slightly smaller size
+
+### 2025-10-30 v1.0 - Initial Documentation
+- Documented 75pt Regular font configuration
+- Two-row layout with full-width rows
+- Initial optimization guidelines
