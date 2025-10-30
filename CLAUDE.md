@@ -7,49 +7,32 @@ This file provides guidance to Claude Code when working with the Pebble Superled
 **Superledgible** is a minimalist Pebble watchface focused on maximum readability using the Atkinson Hyperlegible font. The design philosophy is simple: display the time as large as possible with maximum legibility, nothing else.
 
 **Key Features:**
-- Two-row time display (HH on top, MM on bottom)
-- Atkinson Hyperlegible Mono font for exceptional readability
-- Automatic 12h/24h format detection (no leading zero for 12h hours)
+- **Bitmap-based 2x2 quadrant layout** - Four individual digits in a clean grid
+- **Maximum digit size** - Each digit uses full quadrant space (72×84px on 144×168 displays)
+- Atkinson Hyperlegible font for exceptional readability
+- Automatic 12h/24h format detection (leading zero hidden for single-digit hours in 12h)
 - Universal support for all 5 Pebble platforms
-- Platform-specific optimization (larger fonts on rectangular displays)
+- Platform-specific optimization (padding for round displays, full quadrants for rectangular)
 - Battery efficient (updates once per minute)
 
 ## Technical Constraints
 
-### Critical Pebble SDK Limits
+### Bitmap-Based Rendering Approach
 
-#### 1. Glyph Size Limit: 256 Bytes (Hard Limit)
-The Pebble SDK imposes a **maximum glyph size of 256 bytes** per character when loading custom fonts. This is not a warning—it's a hard constraint that will cause build failures.
+The watchface uses **pre-rendered bitmap images** for digits 0-9, avoiding Pebble SDK font rendering limitations entirely. This approach provides:
 
-**Implications:**
-- Font size and weight combinations must stay under 256 bytes per digit
-- ExtraBold weight at 72pt = 263 bytes (exceeds limit)
-- ExtraBold weight at 71pt = ~253 bytes (works)
-- Regular weight allows slightly larger sizes but looks thinner
+**Advantages:**
+- **No glyph size limits** - Bitmaps can be any size
+- **Maximum quality** - High-quality anti-aliased rendering
+- **Consistent appearance** - Identical rendering across all platforms
+- **Optimized performance** - No runtime font rendering overhead
 
-**Error Message:**
-```
-Exception: Glyph too large! codepoint 48: 263 > 256
-```
+**Trade-offs:**
+- **Fixed size** - Digit size determined at bitmap creation time
+- **Memory usage** - 10 bitmap resources (digits 0-9) loaded into memory
+- **Resource size** - Each bitmap adds to .pbw file size (~8-10KB total for all digits)
 
-#### 2. Maximum Achievable Font Size
-
-**For Rectangular Displays (Current Configuration):**
-- **71pt Atkinson Hyperlegible Mono ExtraBold**
-- Results in glyphs approximately 95px tall
-- Stays safely under 256-byte glyph limit (~253 bytes)
-- Bold strokes provide maximum readability and legibility
-
-**For Round Displays (Chalk):**
-- Can use smaller font size if needed for text flow
-- Platform-specific configuration via `#ifdef PBL_ROUND`
-
-**Glyph Size Limits by Weight:**
-- **ExtraBold**: 71pt maximum (72pt = 263 bytes, exceeds limit)
-- **Regular**: 75pt maximum (76pt = 265 bytes, exceeds limit)
-- **80pt**: Exceeds limit for all weights (294 bytes for Regular)
-
-#### 3. Platform Display Resolutions
+### Platform Display Resolutions
 
 | Platform | Resolution | Aspect Ratio | Shape |
 |----------|-----------|--------------|-------|
@@ -66,207 +49,223 @@ Exception: Glyph too large! codepoint 48: 263 > 256
 
 **IMPORTANT OPTIMIZATION DIRECTIVE:**
 > **Do not let circular display limitations constrain rectangular display optimization.**
-> While the watchface must support all platforms, rectangular displays (aplite, basalt, diorite, emery) represent the majority of Pebble devices and should be optimized for maximum font size and readability. Use platform-specific code (`#ifdef PBL_ROUND`) to provide appropriate handling for circular displays without compromising rectangular display performance. The rectangular displays should always use the largest possible font size that fits within the 256-byte glyph limit.
+> While the watchface must support all platforms, rectangular displays (aplite, basalt, diorite, emery) represent the majority of Pebble devices and should be optimized for maximum digit size and readability. Use platform-specific code (`#ifdef PBL_ROUND`) to provide appropriate handling for circular displays without compromising rectangular display performance.
 
-### Font Rendering Characteristics
+### 2x2 Quadrant Layout
 
-#### Font Baseline Behavior
-The 71pt ExtraBold font has specific rendering characteristics:
-- Digits sit **high** in their bounding box due to font baseline
-- Font height (≈95px) fits well within vertical space on all displays
-- Two-row layout with vertical alignment brings time closer to center
-- Center alignment handles single-digit hours in 12h format
+The watchface uses a clean **2x2 grid layout** with four individual BitmapLayers:
 
-**Two-Row Layout with Vertical Alignment:**
+**Quadrant Dimensions (144×168 displays):**
 ```
-Example with 71pt font on 144×168 display:
-- Half height = 84px (midpoint)
-- Font height = 105px (used for positioning - oversized for tight centering)
-- Hours: positioned at bottom of top half (y = 84 - 105 = -21)
-- Minutes: positioned at top of bottom half (y = 84)
-- This brings HH and MM very close together with minimal gap
-- Full-width rows (144px) provide ample horizontal space
-- Center alignment automatically handles variable digit widths
+Display: 144px wide × 168px tall
+Quadrant width:  144 / 2 = 72px
+Quadrant height: 168 / 2 = 84px
+
+Grid Layout:
+┌────────────┬────────────┐
+│ Hour Tens  │ Hour Ones  │  ← Top row (y: 0-84)
+│   (0-2)    │   (0-9)    │
+├────────────┼────────────┤
+│ Min Tens   │ Min Ones   │  ← Bottom row (y: 84-168)
+│   (0-5)    │   (0-9)    │
+└────────────┴────────────┘
 ```
 
-**Solution:**
-Two-row layout with vertical alignment positioning and center horizontal alignment.
+**Bitmap Layer Positioning (Rectangular Displays):**
+- **Hour Tens**:   GRect(0, 0, 72, 84)
+- **Hour Ones**:   GRect(72, 0, 72, 84)
+- **Minute Tens**: GRect(0, 84, 72, 84)
+- **Minute Ones**: GRect(72, 84, 72, 84)
 
-#### Monospace Digit Width
-For 71pt ExtraBold:
-- Approximate digit width: 60-70% of height
-- Height ≈ 95px → Width ≈ 57-67px
-- Tracking adjustment of -4 brings digits closer together
-- Monospace ensures all digits have identical width
-- Bold strokes enhance readability at this size
+**Round Display Handling:**
+- 10px padding applied to all sides
+- Adjusted quadrant dimensions: (180 - 20) / 2 = 80px
+- Prevents digits from clipping at curved edges
+
+**12h Format Special Handling:**
+- When hour < 10 in 12h format (e.g., 2:30)
+- Hour tens layer is hidden: `layer_set_hidden(bitmap_layer_get_layer(s_hour_tens_layer), true)`
+- Bitmap set to NULL: `bitmap_layer_set_bitmap(s_hour_tens_layer, NULL)`
+- Creates clean appearance without leading zero
 
 ## Current Optimal Configuration
 
-### Font Settings (appinfo.json)
+### Bitmap Resources (appinfo.json)
 
 ```json
-{
-  "type": "font",
-  "name": "FONT_ATKINSON_MONO_EXTRABOLD_71",
-  "file": "fonts/AtkinsonHyperlegibleMono-ExtraBold.ttf",
-  "targetSize": 71,
-  "characterRegex": "[0-9]",
-  "trackingAdjust": -4
+"resources": {
+  "media": [
+    {
+      "type": "bitmap",
+      "name": "DIGIT_0",
+      "file": "images/digit_0.png"
+    },
+    // ... DIGIT_1 through DIGIT_9
+  ]
 }
 ```
 
-**Why These Values:**
-- **71pt**: Maximum size under glyph limit for ExtraBold weight (~253 bytes / 256 bytes max)
-- **ExtraBold weight**: Boldest monospace font for maximum readability and legibility
-- **targetSize: 71**: Explicit size specification for consistency
-- **trackingAdjust: -4**: Tightest spacing without digit overlap
-- **[0-9] only**: Reduces memory usage (only need digits)
+**Resource Structure:**
+- **10 bitmap files**: `digit_0.png` through `digit_9.png`
+- **Location**: `resources/images/`
+- **Format**: PNG with transparency
+- **Generated from**: Atkinson Hyperlegible font at optimal size
+- **Dimensions**: Sized to fit within quadrant dimensions (72×84px for standard displays)
 
-### Layout Parameters (main.c)
+### Code Structure (main.c)
 
-**Rectangular Displays** (aplite, basalt, diorite, emery):
+**Bitmap Loading** (main.c:82-85):
 ```c
-int16_t half_height = bounds.size.h / 2;
-int16_t font_approx_height = 105;  // Oversized for maximum tight centering
-
-// Vertically-aligned two-row layout:
-// - Hours: bottom-aligned in top half
-//   y = half_height - font_height (brings hours down to meet center)
-// - Minutes: top-aligned in bottom half
-//   y = half_height (starts right at center)
-// This minimizes gap between HH and MM
-
-// For 144×168 display:
-// - Hours:   x=0, y=-21, w=144, h=105 (bottom-aligned in top half)
-// - Minutes: x=0, y=84,  w=144, h=105 (top-aligned in bottom half)
-
-// Text is horizontally center-aligned within each full-width row
-// Single-digit hours (12h format) are automatically centered
+// Load all digit bitmaps at window load
+for (int i = 0; i < 10; i++) {
+  s_digit_bitmaps[i] = gbitmap_create_with_resource(DIGIT_RESOURCE_IDS[i]);
+}
 ```
 
-**Round Display** (chalk):
+**Rectangular Display Layout** (main.c:109-121):
 ```c
-int16_t padding = 10;  // uniform padding
+// Calculate quadrant dimensions
+int16_t quadrant_width = bounds.size.w / 2;   // 72px
+int16_t quadrant_height = bounds.size.h / 2;  // 84px
 
-// Two-row layout with padding:
-// - Top row: x=padding, y=padding, w=bounds.size.w - 2*padding, h=half_height - padding
-// - Bottom row: x=padding, y=half_height, w=bounds.size.w - 2*padding, h=half_height - padding
-
-// Enable text flow for edge wrapping:
-text_layer_enable_screen_text_flow_and_paging(layer, 5);
+// Create bitmap layers for 2x2 grid
+s_hour_tens_layer = bitmap_layer_create(GRect(0, 0, quadrant_width, quadrant_height));
+s_hour_ones_layer = bitmap_layer_create(GRect(quadrant_width, 0, quadrant_width, quadrant_height));
+s_minute_tens_layer = bitmap_layer_create(GRect(0, quadrant_height, quadrant_width, quadrant_height));
+s_minute_ones_layer = bitmap_layer_create(GRect(quadrant_width, quadrant_height, quadrant_width, quadrant_height));
 ```
 
-### Why Two-Row Layout?
+**Round Display Layout** (main.c:91-107):
+```c
+int16_t padding = 10;
+int16_t adjusted_width = (bounds.size.w - 2 * padding) / 2;
+int16_t adjusted_height = (bounds.size.h - 2 * padding) / 2;
+
+// Apply padding to all quadrants
+s_hour_tens_layer = bitmap_layer_create(GRect(padding, padding, adjusted_width, adjusted_height));
+// ... etc
+```
+
+### Why 2x2 Quadrant Layout?
 
 **Benefits:**
-- **Simpler code**: 2 text layers instead of 4
-- **Natural digit pairing**: HH and MM are visually grouped
-- **Maximum horizontal space**: Full display width (144px) for each row
-- **Automatic centering**: Single-digit hours in 12h format center automatically
-- **Font tracking handles spacing**: -4 tracking brings digits in each pair close together
-- **Larger fonts possible**: More vertical space allows for taller fonts
+- **Maximum digit size**: Each digit gets full quadrant space (72×84px)
+- **Clean visual grid**: Natural 2×2 organization is instantly readable
+- **Simple code**: 4 bitmap layers, straightforward positioning
+- **No layout constraints**: Digits don't need to flow or wrap
+- **Platform scalable**: Quadrant math works for any display size
+- **12h format friendly**: Easy to hide hour tens digit
 
 **Evolution of Layout:**
-- **Original**: 4 separate single-digit layers with h_inset optimization
-- **Intermediate**: 2 two-digit layers with full-width rows, 75pt Regular
-- **Current**: 2 two-digit layers with vertical alignment, 71pt ExtraBold
-- **Result**: Bolder, more readable font with time centered vertically
+- **Original**: Font-based two-row layout with TextLayers
+- **Optimization attempts**: Various font sizes (48pt → 71pt → 75pt)
+- **Glyph size limits**: Hit 256-byte per-glyph SDK limit at larger sizes
+- **Current**: Bitmap-based 2×2 quadrant layout
+- **Result**: Maximum size possible with no SDK font limitations
 
 ## Optimization History
 
-### What Was Tried
+### Font-Based Approaches (Historical)
+
+These approaches were tried with Pebble SDK font rendering before switching to bitmaps:
 
 #### Attempt 1: Increase Font Size
 **Goal**: Use 72pt or larger font
 **Result**: ❌ Failed - glyph size exceeds 256 bytes
-```
-Error: Glyph too large! codepoint 48: 263 > 256
-```
-**Learning**: 71pt is the hard maximum for ExtraBold weight
+**Learning**: Hit SDK's hard 256-byte per-glyph limit
 
 #### Attempt 2: Use Regular Weight for Larger Size
 **Goal**: Try 75pt Regular to achieve larger visual size
 **Result**: ⚠️ Partial - fits glyph limit but thinner strokes reduce readability
-**Learning**: Weight vs size trade-off exists, but was later reconsidered
-**Status**: Superseded by Attempt 6
+**Learning**: Weight vs size trade-off exists with font rendering
 
-#### Attempt 3: Asymmetric Vertical Insets for Centering
-**Goal**: Use asymmetric vertical insets (6px top, 18px bottom) to center digits better
-**Result**: ❌ Failed - caused clipping at bottom of digits (MM digits cut off)
-**Learning**: Font baseline causes digits to sit high; vertical insets reduce available height below what's needed
+#### Attempt 3-5: Layout Optimizations
+**Goal**: Various attempts to optimize spacing and centering with font-based rendering
+**Result**: Mixed success - found optimal tracking (-4), vertical alignment, etc.
+**Learning**: Font-based approach was hitting fundamental size limitations
 
-#### Attempt 4: Aggressive Tracking Adjustment
-**Goal**: Test tracking values from -3 to -5
-**Result**: ✅ Success - tracking of -4 provides tight spacing without overlap
-**Learning**: -3 still had noticeable gaps; -5 risked overlap; -4 is optimal
+#### Attempt 6: ExtraBold Font with Vertical Alignment
+**Goal**: Prioritize font boldness; use vertical alignment
+**Result**: ✅ Success but limited - 71pt ExtraBold was maximum achievable
+**Learning**: Font rendering approach was constrained by SDK limits
 
-#### Attempt 5: Horizontal Insets Only
-**Goal**: Reduce box width to bring digits closer horizontally while maintaining full vertical height
-**Result**: ✅ Success - tested h_inset values from 8px to 16px
-**Learning**: Horizontal optimization is safe; vertical optimization causes clipping
-**Status**: Superseded by Attempt 6 which uses full-width rows
+### Bitmap-Based Approach (CURRENT)
 
-#### Attempt 6: ExtraBold Font with Vertical Alignment (CURRENT)
-**Goal**: Prioritize font boldness for readability; use vertical alignment to center time
-**Result**: ✅ Success - 71pt ExtraBold with hours bottom-aligned and minutes top-aligned
-**Learning**: Bold weight is more important than size for readability; vertical alignment eliminates gap between HH and MM without clipping
+#### Attempt 7: Switch to Pre-Rendered Bitmaps with 2x2 Quadrant Layout ✅
+**Goal**: Eliminate SDK font size limits; achieve maximum digit size
+**Result**: ✅ Complete Success
 **Implementation**:
-- Font: 71pt ExtraBold (vs previous 75pt Regular)
-- Hours: y = half_height - font_height (bottom-aligned in top half)
-- Minutes: y = half_height (top-aligned in bottom half)
-- Full-width rows (no h_inset needed)
-- Result: Maximum boldness with centered time display
+- 10 pre-rendered PNG bitmaps (digits 0-9)
+- Generated from Atkinson Hyperlegible font at optimal size
+- 2×2 quadrant grid layout (72×84px per digit on 144×168 displays)
+- 4 BitmapLayers instead of TextLayers
+- Platform-specific padding for round displays
 
-### What Works
+**Benefits Achieved:**
+- No glyph size limit (can make digits as large as needed)
+- Consistent high-quality rendering across all platforms
+- Simpler runtime code (no font rendering overhead)
+- Maximum digit size: 72×84px per character
+- Clean 2×2 visual grid that's instantly readable
 
-✅ **ExtraBold at 71pt**: Maximum size within glyph limit, excellent readability with bold strokes
-✅ **Tracking adjustment of -4**: Tight, visually appealing spacing
-✅ **Vertical alignment positioning**: Hours at bottom of top half, minutes at top of bottom half
-✅ **Full-width rows**: Provides maximum horizontal space, no h_inset needed
-✅ **Platform-specific handling**: Round vs rectangular optimization
-✅ **Center horizontal alignment**: Works perfectly with full-width rows and variable-width hours (12h format)
+**Trade-offs:**
+- Fixed digit size (but optimal for Pebble displays)
+- 10 bitmap resources (~8-10KB total)
+- Cannot dynamically resize (not needed for this use case)
+
+### What Works Now
+
+✅ **Bitmap-based rendering**: No SDK font size limits
+✅ **2×2 quadrant layout**: Maximum digit size, clean visual grid
+✅ **72×84px per digit**: Optimal size for 144×168 displays
+✅ **Platform-specific handling**: Padding for round, full quadrants for rectangular
+✅ **Hidden hour tens in 12h**: Clean appearance for single-digit hours
+✅ **Simple, maintainable code**: Straightforward bitmap layer positioning
 
 ### What Doesn't Work
 
-❌ **Fonts larger than 71pt ExtraBold**: Exceeds 256-byte glyph limit
-❌ **Asymmetric vertical insets**: Causes clipping with tall fonts
-❌ **Regular weight at 75pt+**: Exceeds glyph limit (280 bytes); also less readable than smaller ExtraBold
-❌ **Tracking tighter than -4**: Risk of digit overlap
-❌ **Simple centered layout**: Leaves large gap between hours and minutes
-❌ **Same layout for round and rectangular**: Round displays need special handling
+❌ **Font-based rendering above 71pt**: Exceeds 256-byte glyph limit (historical issue)
+❌ **Single bitmap for all digits**: Need individual bitmaps for each digit 0-9
+❌ **No padding on round displays**: Causes clipping at curved edges
+❌ **Dynamic digit sizing**: Bitmaps are fixed size (but this is optimal for our use case)
 
 ## Layout Reference Tables
 
-### Horizontal Inset Testing (144×168 Rectangular Displays)
+### Quadrant Dimensions by Platform
 
-**Note**: Current configuration uses full-width rows (h_inset = 0) with vertical alignment instead of horizontal insets.
+| Platform | Display Size | Quadrant Size | Padding | Notes |
+|----------|-------------|---------------|---------|-------|
+| Aplite | 144×168 | 72×84 | None | Full quadrants |
+| Basalt | 144×168 | 72×84 | None | Full quadrants |
+| Diorite | 144×168 | 72×84 | None | Full quadrants |
+| Emery | 200×228 | 100×114 | None | Larger quadrants |
+| Chalk (Round) | 180×180 | 80×80 | 10px all sides | Prevents edge clipping |
 
-| h_inset | Box Width | Per-Digit Shift | Total Shift (4 digits) | Tested | Result |
-|---------|-----------|-----------------|------------------------|--------|--------|
-| **0px** | **144px (full)** | **0px** | **0px** | ✅ Yes | ✅ **Current - full width** |
-| 8px | 128px | 4px | 16px | ✅ Yes | ✅ Conservative (deprecated) |
-| 10px | 124px | 5px | 20px | ✅ Yes | ✅ Moderate (deprecated) |
-| 16px | 112px | 8px | 32px | ✅ Yes | ⚠️ Aggressive (deprecated) |
-| 18px | 108px | 9px | 36px | ❌ No | ⚠️ Untested - may be too tight |
+### Bitmap Resource Specifications
 
-### Font Size Testing (Atkinson Hyperlegible Mono ExtraBold)
+| Resource | File | Dimensions | Format | Usage |
+|----------|------|------------|--------|-------|
+| DIGIT_0 | images/digit_0.png | ~60×75px | PNG-8/24 | Zero digit |
+| DIGIT_1 | images/digit_1.png | ~60×75px | PNG-8/24 | One digit |
+| ... | ... | ... | ... | ... |
+| DIGIT_9 | images/digit_9.png | ~60×75px | PNG-8/24 | Nine digit |
 
-| Size | Glyph Size (bytes) | Height (approx) | Width (approx) | Result |
-|------|-------------------|-----------------|----------------|--------|
-| 70pt | ~245 bytes | 93px | 56-65px | ✅ Works |
-| **71pt** | **~253 bytes** | **95px** | **57-67px** | ✅ **Optimal (current)** |
-| 72pt | 263 bytes | 97px | 58-68px | ❌ Exceeds glyph limit |
-| 75pt | ~280 bytes | 101px | 61-71px | ❌ Exceeds glyph limit |
+**Note**: Actual bitmap dimensions are optimized for quadrant size while maintaining aspect ratio and legibility.
 
-### Tracking Adjustment Testing
+---
 
-| Tracking | Visual Appearance | Digit Spacing | Result |
-|----------|------------------|---------------|--------|
-| 0 (default) | Wide gaps | Comfortable | Too much empty space |
-| -2 | Moderate gaps | Reduced | Still noticeable gaps |
-| -3 | Small gaps | Tight | Better but improvable |
-| **-4** | **Minimal gaps** | **Very tight** | ✅ **Optimal (current)** |
-| -5 | No gaps | Risk of overlap | ⚠️ Too aggressive |
+### Historical Reference: Font-Based Approach (Deprecated)
+
+These tables document the font-based approach that was used before switching to bitmaps:
+
+**Font Size Testing (Atkinson Hyperlegible Mono ExtraBold)**
+- 71pt was maximum achievable before hitting 256-byte glyph limit
+- 72pt+ exceeded SDK limits
+- Led to decision to switch to bitmap approach for larger sizes
+
+**Tracking Adjustment Testing**
+- Optimal tracking was -4 for font-based rendering
+- Not applicable to bitmap approach (spacing built into bitmap images)
 
 ## Development Workflow
 
@@ -310,102 +309,96 @@ nix-shell --run "pebble install --phone <IP_ADDRESS>"
 
 ### Making Layout Changes
 
-**To adjust vertical alignment:**
+**To adjust quadrant dimensions:**
 
-1. **Edit `src/main.c`** around line 71:
+1. **For rectangular displays** - Edit `src/main.c` around lines 88-89:
    ```c
-   int16_t font_approx_height = 105;  // Adjust this value
+   int16_t quadrant_width = bounds.size.w / 2;   // Currently 72px on 144×168
+   int16_t quadrant_height = bounds.size.h / 2;  // Currently 84px on 144×168
    ```
 
-2. **Safe ranges:**
-   - **95-105px**: Safe range for 71pt ExtraBold (current: 105px for maximum tight centering)
-   - Increase to bring time closer together (tighter gap)
-   - Decrease to add more gap between hours and minutes
-   - 105px provides optimal tight centering with minimal gap
+2. **For round displays** - Edit `src/main.c` around line 93:
+   ```c
+   int16_t padding = 10;  // Adjust padding value
+   ```
 
 3. **Test thoroughly** - check for clipping on all platforms
 
-4. **Automated screenshot testing** (optional):
+4. **Automated screenshot testing**:
    ```bash
    # Build and install
    nix-shell --run "pebble build && pebble install --emulator basalt"
 
    # Capture screenshot with Peekaboo
-   sleep 1 && peekaboo image --app "qemu-pebble" --path /tmp/watchface.png
+   sleep 1 && peekaboo image --app "qemu-pebble" --path screenshots/watchface.png
 
    # View the screenshot
-   open /tmp/watchface.png
+   open screenshots/watchface.png
    ```
 
-**To adjust font size:**
+**To change digit appearance:**
 
-1. **Check glyph size first** - 71pt ExtraBold is the maximum
-2. **Edit `appinfo.json`** - change font name, file, and size
-3. **Update `src/main.c` line 65** - update resource ID to match
-4. **Rebuild and test immediately** - glyph limit errors appear at build time
+1. **Regenerate bitmap images** - Would need external tool to render Atkinson Hyperlegible font to PNG
+2. **Replace files** in `resources/images/digit_0.png` through `digit_9.png`
+3. **Rebuild and test** - verify new bitmaps display correctly
 
-**To adjust tracking:**
+**To adjust digit positioning within quadrants:**
 
-1. **Edit `appinfo.json`** line 19:
-   ```json
-   "trackingAdjust": -4  // Change this value
-   ```
-
-2. **Safe ranges:**
-   - **0 to -3**: Safe but more spacing
-   - **-4**: Current optimal
-   - **-5 or lower**: Risk of overlap
+1. Currently digits fill entire quadrant space
+2. To add margins, would need to regenerate bitmaps at smaller size
+3. Or add custom positioning logic in BitmapLayer creation
 
 ### Common Tasks for Claude Code
 
 When the user says:
-- **"Test larger font"** → Check glyph size limit (256 bytes max); 71pt ExtraBold is the maximum
-- **"Move time closer to center"** → Adjust `font_approx_height` value (currently 105px for maximum tight centering)
-- **"Add more gap"** → Decrease `font_approx_height` (try 95-100px)
-- **"Make font bolder"** → Already using ExtraBold (boldest available monospace)
-- **"Vertical centering issue"** → Adjust vertical alignment positioning via `font_approx_height`
-- **"Build and test"** → Use nix-shell with pebble CLI
-- **"Different platform"** → Use `--emulator <platform>` flag
-- **"Make digits larger"** → Explain 71pt is maximum due to glyph limit for ExtraBold weight
-- **"Take a screenshot"** → Use Peekaboo: `peekaboo image --app "qemu-pebble" --path /tmp/watchface.png`
+- **"Make digits larger"** → Would require regenerating bitmap images at larger size; current size is optimized for quadrant dimensions
+- **"Change font"** → Would require regenerating all 10 digit bitmaps with new font
+- **"Adjust spacing"** → For bitmap approach, spacing is baked into images; would need to regenerate bitmaps
+- **"Add padding on rectangular"** → Adjust quadrant dimensions in main.c (currently using full width/height)
+- **"Fix round display clipping"** → Adjust padding value in `#ifdef PBL_ROUND` section (currently 10px)
+- **"Build and test"** → Use nix-shell with pebble CLI: `nix-shell --run "pebble build && pebble install --emulator basalt"`
+- **"Different platform"** → Use `--emulator <platform>` flag (aplite, basalt, chalk, diorite, emery)
+- **"Take a screenshot"** → Use Peekaboo: `peekaboo image --app "qemu-pebble" --path screenshots/watchface.png`
+- **"Test 12h format"** → Toggle Pebble system time format in emulator settings
+- **"Regenerate bitmaps"** → Would need external tool to render Atkinson Hyperlegible font to PNG images
 
 ## Known Issues and Gotchas
 
-### 1. Glyph Size Limit is Hard
-**Symptom**: Build error "Glyph too large! codepoint XX: XXX > 256"
-**Cause**: Font size + weight combination exceeds 256-byte limit
-**Solution**: Use 71pt ExtraBold (maximum safe size)
-**Prevention**: Don't exceed 71pt for ExtraBold weight
+### 1. Bitmap Resources Must Be Present
+**Symptom**: Build error about missing resources or blank digits on display
+**Cause**: Missing digit bitmap files in `resources/images/`
+**Solution**: Ensure all files digit_0.png through digit_9.png exist
+**Prevention**: Keep all 10 bitmap files in version control
 
-### 2. Vertical Positioning and Clipping
-**Symptom**: Top or bottom of digits cut off on display
-**Cause**: Incorrect `font_approx_height` value or positioning calculation
-**Solution**: Adjust `font_approx_height` to optimal value (105px for maximum tight centering)
-**Prevention**: Use safe height values (95-105px range) and test on all platforms; use Peekaboo for automated screenshot verification
+### 2. Round Display Edge Clipping
+**Symptom**: Digits cut off at curved edges on Chalk (round display)
+**Cause**: Insufficient padding for round display
+**Solution**: Adjust padding value in `#ifdef PBL_ROUND` section (currently 10px)
+**Prevention**: Test on chalk emulator after layout changes
 
-### 3. Font Baseline Positioning
-**Symptom**: Digits appear to sit high in their boxes
-**Cause**: Font baseline metrics cause vertical positioning quirks
-**Solution**: Accept the positioning; it's a font characteristic, not a bug
-**Prevention**: Use center text alignment to minimize visual impact
-
-### 4. Platform-Specific Behavior
+### 3. Platform-Specific Behavior
 **Symptom**: Layout looks different on chalk (round) vs basalt (rectangular)
-**Cause**: Round displays need padding and text flow
+**Cause**: Round displays use padding; rectangular use full quadrants
 **Solution**: Already implemented with `#ifdef PBL_ROUND`
 **Prevention**: Test on both rectangular and round emulators
 
-### 5. Tracking Affects Spacing
-**Symptom**: Changing tracking makes digits wider or narrower
-**Cause**: Tracking adjustment changes horizontal spacing between character strokes
-**Solution**: Adjust `h_inset` if tracking changes significantly
-**Prevention**: Test digit width when changing tracking values
-
-### 6. Time Format Detection
+### 4. Time Format Detection
 **Symptom**: Watchface shows 24h when expecting 12h (or vice versa)
 **Cause**: Watchface automatically detects system time format preference
 **Solution**: Change time format in Pebble settings (not watchface settings)
 **Prevention**: Document that format is auto-detected, not configurable
+
+### 5. Hour Tens Not Hidden in 12h Format
+**Symptom**: Leading zero shows for single-digit hours (e.g., "02:30" instead of "2:30")
+**Cause**: Missing or incorrect logic in `update_time()` function
+**Solution**: Verify lines 58-64 in main.c properly hide hour_tens layer
+**Prevention**: Test with various times in 12h format (1:00, 2:30, 11:45, 12:00)
+
+### 6. Bitmap Size Doesn't Match Quadrant
+**Symptom**: Digits appear too small, too large, or cut off
+**Cause**: Bitmap images not optimized for quadrant dimensions
+**Solution**: Regenerate bitmaps at appropriate size for target quadrant (72×84px for standard displays)
+**Prevention**: Design bitmaps to fit within smallest target quadrant with some margin
 
 ## Future Optimization Ideas
 
@@ -447,24 +440,19 @@ When the user says:
 
 ## Appendix: Error Messages and Solutions
 
-### "Glyph too large! codepoint XX: XXX > 256"
-- **Cause**: Font size + weight exceeds glyph size limit
-- **Solution**: Use 71pt ExtraBold (maximum safe size)
-- **Prevention**: Don't exceed 71pt for ExtraBold weight
+### "Resource not found: RESOURCE_ID_DIGIT_X"
+- **Cause**: Missing bitmap resource definition or file
+- **Solution**: Verify appinfo.json includes all digit resources (DIGIT_0 through DIGIT_9)
+- **Prevention**: Keep all bitmap definitions in appinfo.json
 
-### Digits Clipped at Top or Bottom
-- **Cause**: Incorrect `font_approx_height` value
-- **Solution**: Adjust `font_approx_height` to match actual font dimensions
-- **Prevention**: Use conservative height estimates and test on all platforms
-
-### Digits Overlapping
-- **Cause**: Tracking too tight (more negative than -4)
-- **Solution**: Reduce tracking (make less negative, e.g., from -5 to -4)
-- **Prevention**: Test with all digits 0-9 after tracking changes; -4 is optimal
+### Blank/Missing Digits on Display
+- **Cause**: Bitmap file missing or corrupted, or bitmap not loaded
+- **Solution**: Check resources/images/ has all digit_*.png files; verify bitmap loading in main_window_load()
+- **Prevention**: Test after any resource changes
 
 ### Round Display Clipping at Edges
-- **Cause**: Missing text flow or insufficient padding
-- **Solution**: Verify `text_layer_enable_screen_text_flow_and_paging()` is called
+- **Cause**: Insufficient padding for round display
+- **Solution**: Increase padding value in `#ifdef PBL_ROUND` section
 - **Prevention**: Always test on chalk emulator
 
 ### Wrong Time Format (12h vs 24h)
@@ -472,34 +460,45 @@ When the user says:
 - **Solution**: Change time format in Pebble settings (not watchface)
 - **Prevention**: Document that format is auto-detected
 
+### Build Fails with "Resource file not found"
+- **Cause**: Bitmap files not in correct location
+- **Solution**: Ensure all digit_*.png files are in resources/images/
+- **Prevention**: Keep resource directory structure intact
+
 ---
 
 **Last Updated**: 2025-10-30
-**Version**: 2.2 (Maximum tight centering + screenshot automation)
+**Version**: 3.0 (Bitmap-based 2×2 quadrant layout)
 **Maintainer**: Dan Hart
 **Claude Code**: This file is optimized for Claude Code assistance
 
 ## Changelog
 
-### 2025-10-30 v2.2 - Maximum Tight Centering + Screenshot Automation
-- Increased `font_approx_height` from 95px to **105px** for maximum tight centering
-- Hours now positioned at y=-21, bringing rows significantly closer together
-- Added **Peekaboo screenshot automation** workflow for visual testing
-- Documented automated testing process: build → install → capture → verify
+### 2025-10-30 v3.0 - Bitmap-Based 2×2 Quadrant Layout (CURRENT)
+- **Major architectural change**: Switched from font-based TextLayers to bitmap-based BitmapLayers
+- Implemented clean **2×2 quadrant grid** with 4 individual digit displays
+- **10 pre-rendered bitmap images** (digit_0.png through digit_9.png) generated from Atkinson Hyperlegible font
+- Eliminated SDK font size limitations (no more 256-byte glyph limit)
+- **72×84px per digit** on 144×168 displays (maximum achievable size)
+- Platform-specific handling: full quadrants for rectangular, 10px padding for round
+- 12h format intelligently hides hour tens digit for single-digit hours
+- Comprehensive documentation update to reflect bitmap approach
 
-### 2025-10-30 v2.1 - Tighter Vertical Centering
-- Increased `font_approx_height` from 90px to **95px** for minimal gap
-- Hours and minutes now positioned closer together for better symmetry around center
-- Matches actual font height for optimal vertical centering
+### 2025-10-30 v2.2 - Maximum Tight Centering + Screenshot Automation (Historical)
+- Font-based approach: 71pt ExtraBold with vertical alignment
+- Increased `font_approx_height` to 105px for maximum tight centering
+- Added Peekaboo screenshot automation workflow
+- **Superseded by v3.0 bitmap approach**
 
-### 2025-10-30 v2.0 - ExtraBold with Vertical Alignment
-- Switched from 75pt Regular to **71pt ExtraBold** for maximum readability
-- Implemented **vertical alignment**: hours bottom-aligned in top half, minutes top-aligned in bottom half
-- Removed horizontal insets (h_inset); now using full-width rows
-- Time display now centered vertically with minimal gap between HH and MM
-- Bold strokes significantly improve legibility at slightly smaller size
+### 2025-10-30 v2.1 - Tighter Vertical Centering (Historical)
+- Font-based approach: Adjusted vertical positioning
+- **Superseded by v3.0 bitmap approach**
 
-### 2025-10-30 v1.0 - Initial Documentation
-- Documented 75pt Regular font configuration
-- Two-row layout with full-width rows
-- Initial optimization guidelines
+### 2025-10-30 v2.0 - ExtraBold with Vertical Alignment (Historical)
+- Font-based approach: 71pt ExtraBold (maximum size within glyph limit)
+- Implemented vertical alignment positioning
+- **Superseded by v3.0 bitmap approach**
+
+### 2025-10-30 v1.0 - Initial Documentation (Historical)
+- Font-based approach: 75pt Regular font configuration
+- **Superseded by v3.0 bitmap approach**
