@@ -1,5 +1,14 @@
 #include <pebble.h>
 
+// Screenshot mode - uncomment and set time for screenshots
+// Format: SCREENSHOT_TIME_24H 1 for 24h mode, 0 for 12h mode
+// Format: SCREENSHOT_HOUR (0-23 for 24h, 1-12 for 12h)
+// Format: SCREENSHOT_MINUTE (0-59)
+// #define SCREENSHOT_MODE
+// #define SCREENSHOT_TIME_24H 1
+// #define SCREENSHOT_HOUR 23
+// #define SCREENSHOT_MINUTE 59
+
 // UI Elements - 4 BitmapLayers for individual digits
 static Window *s_main_window;
 static BitmapLayer *s_hour_tens_layer;
@@ -26,21 +35,32 @@ static const uint32_t DIGIT_RESOURCE_IDS[] = {
 
 // Update the time display
 static void update_time() {
-  // Get a tm structure
+  // Get hours and minutes
+  int hours, minutes;
+  int hour_tens, hour_ones, minute_tens, minute_ones;
+  bool use_24h;
+
+#ifdef SCREENSHOT_MODE
+  // Use screenshot mode time
+  use_24h = SCREENSHOT_TIME_24H;
+  hours = SCREENSHOT_HOUR;
+  minutes = SCREENSHOT_MINUTE;
+#else
+  // Get actual time
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
+  use_24h = clock_is_24h_style();
+  hours = tick_time->tm_hour;
+  minutes = tick_time->tm_min;
+#endif
 
   // Get hours based on 12h/24h preference
-  int hours;
-  int hour_tens, hour_ones;
-
-  if (clock_is_24h_style()) {
-    hours = tick_time->tm_hour;
+  if (use_24h) {
     hour_tens = hours / 10;
     hour_ones = hours % 10;
   } else {
     // Convert to 12-hour format
-    hours = tick_time->tm_hour % 12;
+    hours = hours % 12;
     if (hours == 0) {
       hours = 12;  // Midnight/noon should display as 12
     }
@@ -49,13 +69,12 @@ static void update_time() {
   }
 
   // Get minutes
-  int minutes = tick_time->tm_min;
-  int minute_tens = minutes / 10;
-  int minute_ones = minutes % 10;
+  minute_tens = minutes / 10;
+  minute_ones = minutes % 10;
 
   // Update all four bitmap layers
   // In 12h format, hide hour_tens if it's 0 (e.g., for times like 2:23)
-  if (!clock_is_24h_style() && hour_tens == 0) {
+  if (!use_24h && hour_tens == 0) {
     bitmap_layer_set_bitmap(s_hour_tens_layer, NULL);
     layer_set_hidden(bitmap_layer_get_layer(s_hour_tens_layer), true);
   } else {

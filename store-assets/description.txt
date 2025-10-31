@@ -1,0 +1,29 @@
+Super Legible - Maximum Readability for Your Pebble
+
+Experience unmatched legibility with a watch face designed for everyone. Super Legible features the Atkinson Hyperlegible font, created by the Braille Institute of America specifically to maximize character recognition and readability for readers with low vision.
+
+KEY FEATURES:
+• Atkinson Hyperlegible Font - Professionally designed for exceptional legibility and accessibility
+• Maximum Size Display - Time displayed as large as possible for instant readability
+• Ultimate Simplicity - Just the time, nothing else to distract
+• Universal Compatibility - Works perfectly on all 5 Pebble platforms (Aplite, Basalt, Chalk, Diorite, Emery)
+• Automatic Time Format - Respects your 12h/24h preference automatically
+• Battery Efficient - Updates only once per minute for maximum battery life
+• High Contrast - White-on-black design for optimal visibility in all lighting conditions
+
+ACCESSIBILITY FIRST:
+The Atkinson Hyperlegible font differentiates letterforms to increase character recognition, making it easier to read for everyone, especially those with low vision. Each digit is rendered at the largest possible size to maximize visibility at a glance.
+
+CLEAN & MINIMAL:
+No clutter, no complications - just beautifully clear time display. Super Legible respects your screen real estate by showing only what matters most.
+
+Perfect for users who value:
+- Easy readability without glasses
+- Clean, distraction-free design
+- Accessibility-focused typography
+- Universal cross-platform compatibility
+- Efficient battery usage
+
+Works on all Pebble watches: Original Pebble, Pebble Time, Pebble Time Round, Pebble 2, and Pebble Time 2.
+
+Font credit: Atkinson Hyperlegible by Braille Institute (SIL Open Font License)
