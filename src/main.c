@@ -94,11 +94,11 @@ static void main_window_load(Window *window) {
     int16_t adjusted_width = (bounds.size.w - 2 * padding) / 2;
     int16_t adjusted_height = (bounds.size.h - 2 * padding) / 2;
 
-    // Top-left quadrant: hour tens
-    s_hour_tens_layer = bitmap_layer_create(GRect(padding, padding, adjusted_width, adjusted_height));
+    // Top-left quadrant: hour tens (reduced height by 1px for row padding)
+    s_hour_tens_layer = bitmap_layer_create(GRect(padding, padding, adjusted_width, adjusted_height - 1));
 
-    // Top-right quadrant: hour ones
-    s_hour_ones_layer = bitmap_layer_create(GRect(padding + adjusted_width, padding, adjusted_width, adjusted_height));
+    // Top-right quadrant: hour ones (reduced height by 1px for row padding)
+    s_hour_ones_layer = bitmap_layer_create(GRect(padding + adjusted_width, padding, adjusted_width, adjusted_height - 1));
 
     // Bottom-left quadrant: minute tens
     s_minute_tens_layer = bitmap_layer_create(GRect(padding, padding + adjusted_height, adjusted_width, adjusted_height));
@@ -107,11 +107,11 @@ static void main_window_load(Window *window) {
     s_minute_ones_layer = bitmap_layer_create(GRect(padding + adjusted_width, padding + adjusted_height, adjusted_width, adjusted_height));
   #else
     // For rectangular displays - 2x2 quadrant grid
-    // Top-left quadrant: hour tens
-    s_hour_tens_layer = bitmap_layer_create(GRect(0, 0, quadrant_width, quadrant_height));
+    // Top-left quadrant: hour tens (reduced height by 1px for row padding)
+    s_hour_tens_layer = bitmap_layer_create(GRect(0, 0, quadrant_width, quadrant_height - 1));
 
-    // Top-right quadrant: hour ones
-    s_hour_ones_layer = bitmap_layer_create(GRect(quadrant_width, 0, quadrant_width, quadrant_height));
+    // Top-right quadrant: hour ones (reduced height by 1px for row padding)
+    s_hour_ones_layer = bitmap_layer_create(GRect(quadrant_width, 0, quadrant_width, quadrant_height - 1));
 
     // Bottom-left quadrant: minute tens
     s_minute_tens_layer = bitmap_layer_create(GRect(0, quadrant_height, quadrant_width, quadrant_height));
