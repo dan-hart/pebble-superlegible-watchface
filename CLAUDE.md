@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code when working with the Pebble Superledgible watchface project.
+This file provides guidance to Claude Code when working with the Pebble Superlegible watchface project.
 
 ## Project Overview
 
-**Superledgible** is a minimalist Pebble watchface focused on maximum readability using the Atkinson Hyperlegible font. The design philosophy is simple: display the time as large as possible with maximum legibility, nothing else.
+**Superlegible** is a minimalist Pebble watchface focused on maximum readability using the Atkinson Hyperlegible font. The design philosophy is simple: display the time as large as possible with maximum legibility, nothing else.
 
 **Key Features:**
 - **Bitmap-based 2x2 quadrant layout** - Four individual digits in a clean grid
@@ -277,7 +277,7 @@ These tables document the font-based approach that was used before switching to 
 
 **Build:**
 ```bash
-cd ~/Developer/pebble-superledgible-watchface
+cd ~/Developer/pebble-superlegible-watchface
 nix-shell --run "pebble build"
 ```
 

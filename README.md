@@ -1,13 +1,18 @@
-# Superledgible
+# Superlegible
 
 A minimalist Pebble watchface focused on maximum readability using the Atkinson Hyperlegible font.
 
 ![Version](https://img.shields.io/badge/version-1.0-blue)
 ![Platforms](https://img.shields.io/badge/platforms-Aplite%20%7C%20Basalt%20%7C%20Chalk%20%7C%20Diorite%20%7C%20Emery-green)
 ![License](https://img.shields.io/badge/license-GPLv3-blue)
+![GitHub stars](https://img.shields.io/github/stars/dan-hart/pebble-superlegible-watchface?style=social)
+![GitHub forks](https://img.shields.io/github/forks/dan-hart/pebble-superlegible-watchface?style=social)
+![GitHub issues](https://img.shields.io/github/issues/dan-hart/pebble-superlegible-watchface)
+![GitHub last commit](https://img.shields.io/github/last-commit/dan-hart/pebble-superlegible-watchface)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow?logo=buy-me-a-coffee)](https://buymeacoffee.com/codedbydan)
 
 <p align="center">
-  <img src="screenshots/watchface.png" alt="Superledgible Watchface" width="300">
+  <img src="screenshots/watchface.png" alt="Superlegible Watchface" width="300">
 </p>
 
 ## Features
@@ -23,7 +28,7 @@ A minimalist Pebble watchface focused on maximum readability using the Atkinson 
 
 ### Manual Installation
 
-1. Download the `.pbw` file from the [Releases](https://github.com/dan-hart/pebble-superledgible-watchface/releases) page
+1. Download the `.pbw` file from the [Releases](https://github.com/dan-hart/pebble-superlegible-watchface/releases) page
 2. Open the Pebble app on your phone
 3. Go to Settings → Apps
 4. Tap "Install Watch App"
@@ -39,8 +44,8 @@ A minimalist Pebble watchface focused on maximum readability using the Atkinson 
 
 ```bash
 # Clone the repository
-git clone https://github.com/dan-hart/pebble-superledgible-watchface.git
-cd pebble-superledgible-watchface
+git clone https://github.com/dan-hart/pebble-superlegible-watchface.git
+cd pebble-superlegible-watchface
 
 # Build with Nix
 nix-shell --run "pebble build"
@@ -60,7 +65,7 @@ nix-shell --run "pebble install --phone <IP_ADDRESS>"
 
 ## Configuration
 
-No configuration required! Superledgible automatically:
+No configuration required! Superlegible automatically:
 - Detects your system time format preference (12h/24h)
 - Optimizes display for your Pebble model
 - Adapts to rectangular and round displays
@@ -110,6 +115,14 @@ Contributions are welcome! Please:
 4. Test on multiple platforms
 5. Submit a pull request
 
+## Support This Project
+
+If you find Superlegible useful and want to support its development:
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-yellow?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/codedbydan)
+
+Your support helps maintain this project and develop new features!
+
 ## Credits
 
 - **Font**: [Atkinson Hyperlegible](https://brailleinstitute.org/freefont) by Braille Institute of America
@@ -129,7 +142,8 @@ Contributions are welcome! Please:
 
 For issues, questions, or suggestions:
 - Open an issue on GitHub
+- Support development: [Buy Me a Coffee](https://buymeacoffee.com/codedbydan)
 
 ---
 
-**Superledgible** - Maximum readability, minimal complexity.
+**Superlegible** - Maximum readability, minimal complexity.
