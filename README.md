@@ -37,30 +37,45 @@ A minimalist Pebble watchface focused on maximum readability using the Atkinson 
 ### Building from Source
 
 **Prerequisites**:
-- [Nix package manager](https://nixos.org/download.html)
-- [pebble.nix](https://github.com/Sorixelle/pebble.nix)
+- [Nix package manager](https://nixos.org/download.html) with flakes enabled
+- [direnv](https://direnv.net/) (optional, for automatic environment activation)
 
-**Build Steps**:
+**Development Setup**:
 
 ```bash
 # Clone the repository
 git clone https://github.com/dan-hart/pebble-superlegible-watchface.git
 cd pebble-superlegible-watchface
 
-# Build with Nix
-nix-shell --run "pebble build"
+# Option 1: With direnv (automatic environment)
+direnv allow  # Automatically activates Nix environment
+
+# Option 2: Manual Nix development shell
+nix develop
+```
+
+**Build**:
+
+```bash
+# Build the watchface
+pebble build
 
 # The .pbw file will be in build/
 ```
 
 **Install to Emulator**:
 ```bash
-nix-shell --run "pebble install --emulator basalt"
+pebble install --emulator basalt
 ```
 
 **Install to Physical Watch**:
 ```bash
-nix-shell --run "pebble install --phone <IP_ADDRESS>"
+pebble install --phone <IP_ADDRESS>
+```
+
+**Quick Build (without entering shell)**:
+```bash
+nix develop -c pebble build
 ```
 
 ## Configuration
@@ -97,6 +112,31 @@ Your Pebble's time format setting (in Date & Time settings) is automatically res
 - RAM: ~1KB
 - Very efficient and lightweight
 
+## Repository Structure
+
+```
+pebble-superlegible-watchface/
+├── resources/          # Digit bitmaps and fonts
+├── src/                # C source code
+├── store-assets/       # App store submission assets
+│   ├── screenshots/    # Screenshots for all platforms
+│   └── banner.png      # Store banner
+├── tools/              # Development utilities
+│   ├── screenshots/    # Screenshot generation tools
+│   └── banner/         # Banner generation tools
+├── Design/             # GIMP design files and mockups
+├── archive/            # Archived experimental code
+├── appinfo.json        # App metadata
+├── wscript             # Build configuration
+├── flake.nix           # Nix environment (modern)
+└── .envrc              # direnv configuration
+```
+
+**Development Tools** (see `tools/README.md`):
+- `tools/screenshots/generate_screenshots_programmatic.py` - Generate all screenshots automatically
+- `tools/screenshots/crop_screenshots.py` - Crop and resize screenshots
+- `tools/banner/generate_banner.py` - Generate store banner image
+
 ## Development
 
 This project follows Pebble development best practices:
@@ -127,7 +167,7 @@ Your support helps maintain this project and develop new features!
 
 - **Font**: [Atkinson Hyperlegible](https://brailleinstitute.org/freefont) by Braille Institute of America
 - **Developer**: Dan Hart
-- **SDK**: Pebble SDK 3 via [pebble.nix](https://github.com/Sorixelle/pebble.nix)
+- **SDK**: Pebble SDK 3 via [pebble.nix](https://github.com/pebble-dev/pebble.nix)
 
 ## License
 

@@ -25,6 +25,7 @@ Desktop.ini
 # Nix
 result
 result-*
+.direnv/
 
 # Logs
 *.log
