@@ -269,34 +269,61 @@ These tables document the font-based approach that was used before switching to 
 
 ## Development Workflow
 
-### Building and Testing
+### Prerequisites
 
-**Prerequisites:**
-- Nix package manager
-- pebble.nix environment
+**Required:**
+- [Nix package manager](https://nixos.org/download.html) with flakes enabled
+- [pebble.nix](https://github.com/pebble-dev/pebble.nix) (configured via flake.nix)
+
+**Recommended:**
+- [direnv](https://direnv.net/) for automatic environment activation
+- [Peekaboo](https://peekaboo.boo) for automated screenshots: `brew install peekaboo`
+  - Requires Screen Recording permission in System Settings > Privacy & Security
+
+### Environment Setup
+
+**Option 1: direnv (Automatic)**
+```bash
+cd ~/Developer/pebble-superlegible-watchface
+direnv allow  # Automatically activates Nix environment when entering directory
+```
+
+**Option 2: Manual Nix Shell**
+```bash
+cd ~/Developer/pebble-superlegible-watchface
+nix develop  # Enter development shell manually
+```
+
+### Building and Testing
 
 **Build:**
 ```bash
-cd ~/Developer/pebble-superlegible-watchface
-nix-shell --run "pebble build"
+# Inside Nix shell (after direnv allow or nix develop):
+pebble build
+
+# Or build without entering shell:
+nix develop -c pebble build
 ```
 
 **Test on Emulator:**
 ```bash
 # Start basalt (Pebble Time) emulator
-nix-shell --run "pebble install --emulator basalt"
+pebble install --emulator basalt
+
+# Or without entering shell:
+nix develop -c pebble install --emulator basalt
 
 # Test on other platforms:
-nix-shell --run "pebble install --emulator aplite"   # Original Pebble
-nix-shell --run "pebble install --emulator chalk"    # Round display
-nix-shell --run "pebble install --emulator diorite"  # Pebble 2
-nix-shell --run "pebble install --emulator emery"    # Pebble Time 2
+pebble install --emulator aplite   # Original Pebble (B&W)
+pebble install --emulator chalk    # Round display
+pebble install --emulator diorite  # Pebble 2 (B&W)
+pebble install --emulator emery    # Pebble Time 2 (larger color)
 ```
 
 **Install to Physical Watch:**
 ```bash
 # First, ensure Pebble app is in Developer Mode with IP shown
-nix-shell --run "pebble install --phone <IP_ADDRESS>"
+pebble install --phone <IP_ADDRESS>
 ```
 
 **Testing Checklist:**
@@ -327,14 +354,42 @@ nix-shell --run "pebble install --phone <IP_ADDRESS>"
 4. **Automated screenshot testing**:
    ```bash
    # Build and install
-   nix-shell --run "pebble build && pebble install --emulator basalt"
+   pebble build && pebble install --emulator basalt
 
-   # Capture screenshot with Peekaboo
-   sleep 1 && peekaboo image --app "qemu-pebble" --path screenshots/watchface.png
+   # Capture screenshot with Peekaboo (wait for emulator to render)
+   sleep 2 && peekaboo image --app "qemu-pebble" --path screenshots/watchface.png
 
    # View the screenshot
    open screenshots/watchface.png
    ```
+
+   **Note on timing:** The `sleep 2` delay is critical because the emulator takes ~1-2 seconds to launch and render. Capturing immediately results in blank/loading screens. Adjust timing if needed (try `sleep 3` for slower machines).
+
+### Screenshot-Driven Development Cycle
+
+**Quick iteration loop for visual changes:**
+```bash
+# Complete cycle: build → install → screenshot → review
+pebble build && \
+  pebble install --emulator basalt && \
+  sleep 2 && \
+  peekaboo image --app "qemu-pebble" --path screenshots/$(date +%Y%m%d_%H%M%S).png && \
+  open screenshots/*.png | tail -1
+```
+
+**Multi-platform testing loop:**
+```bash
+# Test all 5 platforms and capture screenshots
+for platform in aplite basalt chalk diorite emery; do
+  echo "Testing $platform..."
+  pebble install --emulator $platform
+  sleep 3  # Extra time for platform switch
+  peekaboo image --app "qemu-pebble" --path "screenshots/test-${platform}.png"
+done
+
+# Review all screenshots
+open screenshots/test-*.png
+```
 
 **To change digit appearance:**
 
@@ -356,9 +411,9 @@ When the user says:
 - **"Adjust spacing"** → For bitmap approach, spacing is baked into images; would need to regenerate bitmaps
 - **"Add padding on rectangular"** → Adjust quadrant dimensions in main.c (currently using full width/height)
 - **"Fix round display clipping"** → Adjust padding value in `#ifdef PBL_ROUND` section (currently 10px)
-- **"Build and test"** → Use nix-shell with pebble CLI: `nix-shell --run "pebble build && pebble install --emulator basalt"`
+- **"Build and test"** → Use: `pebble build && pebble install --emulator basalt` (or `nix develop -c pebble build` if not in shell)
+- **"Screenshot the watchface"** → Use: `sleep 2 && peekaboo image --app "qemu-pebble" --path screenshots/watchface.png`
 - **"Different platform"** → Use `--emulator <platform>` flag (aplite, basalt, chalk, diorite, emery)
-- **"Take a screenshot"** → Use Peekaboo: `peekaboo image --app "qemu-pebble" --path screenshots/watchface.png`
 - **"Test 12h format"** → Toggle Pebble system time format in emulator settings
 - **"Regenerate bitmaps"** → Would need external tool to render Atkinson Hyperlegible font to PNG images
 
@@ -437,6 +492,112 @@ When the user says:
 - **Pros**: Could optimize for each platform individually
 - **Cons**: More complex, harder to maintain
 - **Verdict**: Could revisit if supporting more platforms
+
+## Troubleshooting
+
+### Build Issues
+
+**"command not found: nix"**
+- **Cause**: Nix not installed or not in PATH
+- **Solution**: Install Nix: `curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install`
+- **Alternative**: Use `whereis nix` to find installation, add to PATH
+
+**"command not found: pebble"**
+- **Cause**: Not in Nix development shell
+- **Solution**: Run `direnv allow` or `nix develop` first
+- **Verification**: `which pebble` should show /nix/store/... path
+
+**Build succeeds but shows old version on emulator**
+- **Cause**: Cached build artifacts
+- **Solution**: `pebble clean && pebble build`
+- **Prevention**: Use clean build when troubleshooting
+
+**"experimental Nix feature 'flakes' is disabled"**
+- **Cause**: Flakes not enabled in Nix configuration
+- **Solution**: Add `--extra-experimental-features 'nix-command flakes'` to nix commands
+- **Permanent fix**: Enable in `~/.config/nix/nix.conf`: `experimental-features = nix-command flakes`
+
+**"install_name_tool: can't open file: .../arm-none-eabi-gdb" (pebble.nix toolchain build fails)**
+- **Cause**: Known issue with pebble.nix toolchain on certain macOS versions
+- **Error message**: `error: install_name_tool: can't open file: .../pebble-toolchain-bin-4.5/bin/arm-none-eabi-gdb`
+- **Workaround**: This is a known upstream issue with pebble.nix - may need to use alternative Pebble SDK installation method
+- **Status**: Investigating - may require pebble.nix update or alternative setup approach
+- **Note**: If you encounter this, document your working build method in this troubleshooting section
+
+### Emulator Issues
+
+**Emulator won't launch**
+- **Cause**: Stuck emulator process from previous run
+- **Solution**: `pebble kill` or `killall qemu-pebble`
+- **Verification**: `ps aux | grep qemu-pebble` should show no processes
+
+**Multiple emulators running**
+- **Cause**: Platform switches without killing previous emulator
+- **Solution**: `killall qemu-pebble` to close all emulators
+- **Best practice**: Close emulator between platform tests
+
+**Emulator launches but freezes**
+- **Cause**: Emulator crash or hang
+- **Solution**: Force quit: `killall -9 qemu-pebble`, then `pebble install --emulator <platform>` again
+- **Prevention**: Test one platform at a time, allow emulator to fully load
+
+**Can't switch platforms**
+- **Cause**: Previous emulator still running
+- **Solution**: `pebble kill` before installing to different platform
+- **Best practice**: Use loop script for multi-platform testing (see Screenshot-Driven Development Cycle section)
+
+### Screenshot Issues
+
+**Blank or black screenshot captured**
+- **Cause**: Screenshot captured before emulator finished rendering
+- **Solution**: Increase delay: `sleep 3` or `sleep 5`
+- **Best practice**: Wait for emulator window to appear and watchface to load before capturing
+
+**Screenshot shows emulator loading screen**
+- **Cause**: Timing too short for full app launch
+- **Solution**: Use `sleep 2` or `sleep 3` after install command
+- **Platform-specific**: Round displays (chalk) may need longer delay
+
+**Permission denied error from peekaboo**
+- **Cause**: Screen Recording permission not granted to Terminal
+- **Solution**: System Settings > Privacy & Security > Screen Recording → enable for Terminal (or your terminal app)
+- **Verification**: `peekaboo permissions` to check status
+
+**Wrong window captured**
+- **Cause**: Multiple emulators or wrong app focused
+- **Solution**: Close all other emulators with `killall qemu-pebble`, only run one
+- **Verification**: `peekaboo list apps | grep pebble` should show only one instance
+
+**peekaboo not found**
+- **Cause**: Peekaboo not installed
+- **Solution**: `brew install peekaboo`
+- **Verification**: `which peekaboo` should show /opt/homebrew/bin/peekaboo
+
+### Runtime Issues
+
+**Blank or missing digits**
+- **Cause**: Bitmap resources not loaded or file missing
+- **Solution**: Verify all digit_*.png files exist in resources/images/
+- **Check**: `ls resources/images/digit_*.png` should list all 10 files
+- **Rebuild**: `pebble clean && pebble build`
+
+**Digits clipped on round display**
+- **Cause**: Insufficient padding for round (chalk) platform
+- **Solution**: Increase padding value in `#ifdef PBL_ROUND` section (currently 10px, try 12-15px)
+- **Test**: `pebble install --emulator chalk` after changes
+
+**Wrong time format (always 12h or always 24h)**
+- **Cause**: Emulator time format setting
+- **Solution**: Change in emulator: Settings > Date & Time > Use 24h Clock
+- **Note**: Watchface auto-detects system setting, no code changes needed
+
+### Memory Issues
+
+**App crashes on launch**
+- **Cause**: Memory allocation failure or resource exhaustion
+- **Check logs**: `pebble logs` to see crash details
+- **Common cause**: Loading too many bitmaps simultaneously
+- **Solution**: Ensure bitmaps destroyed in `main_window_unload()`
 
 ## Appendix: Error Messages and Solutions
 
