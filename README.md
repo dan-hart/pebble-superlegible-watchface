@@ -39,6 +39,11 @@ A minimalist Pebble watchface focused on maximum readability using the Atkinson 
 **Prerequisites**:
 - [Nix package manager](https://nixos.org/download.html) with flakes enabled
 - [direnv](https://direnv.net/) (optional, for automatic environment activation)
+- [Peekaboo](https://peekaboo.boo) (optional, for screenshot verification)
+  ```bash
+  brew install peekaboo
+  ```
+  - Requires Screen Recording permission: System Settings > Privacy & Security > Screen Recording
 
 **Development Setup**:
 
@@ -77,6 +82,49 @@ pebble install --phone <IP_ADDRESS>
 ```bash
 nix develop -c pebble build
 ```
+
+**Complete Build and Test Workflow**:
+
+```bash
+# 1. Clone and setup
+git clone https://github.com/dan-hart/pebble-superlegible-watchface.git
+cd pebble-superlegible-watchface
+direnv allow  # Automatic environment (or use 'nix develop')
+
+# 2. Build
+pebble build
+
+# 3. Install and test on emulator
+pebble install --emulator basalt
+
+# 4. Capture screenshot (optional, requires peekaboo)
+sleep 2 && peekaboo image --app "qemu-pebble" --path screenshots/watchface.png
+open screenshots/watchface.png
+```
+
+**Test on Multiple Platforms**:
+
+```bash
+# Test on all 5 Pebble platforms
+for platform in aplite basalt chalk diorite emery; do
+  echo "Testing $platform..."
+  pebble install --emulator $platform
+  sleep 2
+  # Optional: capture screenshot of each platform
+  # peekaboo image --app "qemu-pebble" --path "screenshots/${platform}.png"
+done
+```
+
+**Troubleshooting**:
+
+- **Build fails**: Try `pebble clean && pebble build`
+- **Emulator won't launch**: Run `pebble kill` to stop stuck instances
+- **"command not found: pebble"**: Ensure you've run `direnv allow` or `nix develop`
+- **Need to exit Nix shell**: Type `exit` or press Ctrl+D
+- **Screenshot is blank**: Increase delay (try `sleep 3` or `sleep 5`)
+- **Permission denied (peekaboo)**: Grant Screen Recording permission to Terminal in System Settings
+
+For more troubleshooting help, see `CLAUDE.md` Troubleshooting section.
 
 ## Configuration
 
