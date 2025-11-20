@@ -37,8 +37,9 @@ A minimalist Pebble watchface focused on maximum readability using the Atkinson 
 ### Building from Source
 
 **Prerequisites**:
-- [Nix package manager](https://nixos.org/download.html) with flakes enabled
-- [direnv](https://direnv.net/) (optional, for automatic environment activation)
+- Python 3.x: `brew install python`
+- UV package manager: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- Pebble SDK: `uv tool install pebble-tool`
 - [Peekaboo](https://peekaboo.boo) (optional, for screenshot verification)
   ```bash
   brew install peekaboo
@@ -52,11 +53,8 @@ A minimalist Pebble watchface focused on maximum readability using the Atkinson 
 git clone https://github.com/dan-hart/pebble-superlegible-watchface.git
 cd pebble-superlegible-watchface
 
-# Option 1: With direnv (automatic environment)
-direnv allow  # Automatically activates Nix environment
-
-# Option 2: Manual Nix development shell
-nix develop
+# Verify Pebble SDK is installed
+pebble --version
 ```
 
 **Build**:
@@ -78,18 +76,12 @@ pebble install --emulator basalt
 pebble install --phone <IP_ADDRESS>
 ```
 
-**Quick Build (without entering shell)**:
-```bash
-nix develop -c pebble build
-```
-
 **Complete Build and Test Workflow**:
 
 ```bash
 # 1. Clone and setup
 git clone https://github.com/dan-hart/pebble-superlegible-watchface.git
 cd pebble-superlegible-watchface
-direnv allow  # Automatic environment (or use 'nix develop')
 
 # 2. Build
 pebble build
@@ -119,8 +111,7 @@ done
 
 - **Build fails**: Try `pebble clean && pebble build`
 - **Emulator won't launch**: Run `pebble kill` to stop stuck instances
-- **"command not found: pebble"**: Ensure you've run `direnv allow` or `nix develop`
-- **Need to exit Nix shell**: Type `exit` or press Ctrl+D
+- **"command not found: pebble"**: Install Pebble SDK: `uv tool install pebble-tool`
 - **Screenshot is blank**: Increase delay (try `sleep 3` or `sleep 5`)
 - **Permission denied (peekaboo)**: Grant Screen Recording permission to Terminal in System Settings
 
@@ -176,8 +167,6 @@ pebble-superlegible-watchface/
 ├── archive/            # Archived experimental code
 ├── appinfo.json        # App metadata
 ├── wscript             # Build configuration
-├── flake.nix           # Nix environment (modern)
-└── .envrc              # direnv configuration
 ```
 
 **Development Tools** (see `tools/README.md`):
@@ -215,7 +204,7 @@ Your support helps maintain this project and develop new features!
 
 - **Font**: [Atkinson Hyperlegible](https://brailleinstitute.org/freefont) by Braille Institute of America
 - **Developer**: Dan Hart
-- **SDK**: Pebble SDK 3 via [pebble.nix](https://github.com/pebble-dev/pebble.nix)
+- **SDK**: Pebble SDK 3 via UV package manager
 
 ## License
 

@@ -63,7 +63,7 @@ Edit `src/main.c` and uncomment the screenshot mode section:
 
 ```bash
 cd ~/Developer/pebble-superlegible-watchface
-nix-shell --run "pebble build && pebble install --emulator aplite"
+pebble build && pebble install --emulator aplite
 ```
 
 ### Step 3: Screenshot
@@ -96,7 +96,7 @@ Repeat for each time, then for each platform.
 If emulators are being difficult, you can also use the built-in Pebble screenshot command:
 
 ```bash
-nix-shell --run "pebble screenshot --emulator aplite store-assets/screenshots/aplite/10-08-12h.png"
+pebble screenshot --emulator aplite store-assets/screenshots/aplite/10-08-12h.png
 ```
 
 This might be more reliable than peekaboo for capturing emulators.
