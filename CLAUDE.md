@@ -275,6 +275,7 @@ These tables document the font-based approach that was used before switching to 
 - Python 3.x: `brew install python`
 - UV package manager: `curl -LsSf https://astral.sh/uv/install.sh | sh`
 - Pebble SDK: `uv tool install pebble-tool`
+- Pebble SDK 4.5+: `pebble sdk install 4.5` (recommended for Python 3 compatibility)
 
 **Recommended:**
 - [Peekaboo](https://peekaboo.boo) for automated screenshots: `brew install peekaboo`
@@ -286,9 +287,16 @@ These tables document the font-based approach that was used before switching to 
 ```bash
 cd ~/Developer/pebble-superlegible-watchface
 pebble --version  # Should show Pebble SDK version
+pebble sdk list   # Should show 4.5 (active) or later
 ```
 
 **No shell activation needed** - `pebble` command is globally available after UV installation.
+
+**After System Changes:** If you remove Nix, upgrade Python, or make major system changes, reinstall the SDK:
+```bash
+pebble sdk uninstall [version]
+pebble sdk install 4.5
+```
 
 ### Building and Testing
 
@@ -607,9 +615,21 @@ When the user says:
 - **Solution**: Ensure all digit_*.png files are in resources/images/
 - **Prevention**: Keep resource directory structure intact
 
+### Build Fails: FileNotFoundError for SDK Python venv
+- **Symptoms**: `FileNotFoundError: ... .venv/bin/python` during WAF configure phase
+- **Cause**: Corrupted Pebble SDK virtual environment (often after removing Nix or system Python upgrade)
+- **Solution**:
+  ```bash
+  pebble sdk uninstall [version]
+  pebble sdk install 4.5
+  ```
+- **Prevention**: Reinstall SDK after major system changes; use SDK 4.5+ for better Python 3 compatibility
+- **Reference**: See `~/2nd-brain/problems/solved/2025-11-20-pebble-sdk-nix-venv-corruption.md` for detailed analysis
+- **Related**: This issue occurred after removing Nix from system (commit 8324c5e)
+
 ---
 
-**Last Updated**: 2025-10-30
+**Last Updated**: 2025-11-20
 **Version**: 3.0 (Bitmap-based 2×2 quadrant layout)
 **Maintainer**: Dan Hart
 **Claude Code**: This file is optimized for Claude Code assistance
