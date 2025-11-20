@@ -1,0 +1,3 @@
+#!/bin/bash
+# Wrapper script for tools/dev.sh
+bash ~/Developer/pebble-superlegible-watchface/tools/dev.sh "$@"
