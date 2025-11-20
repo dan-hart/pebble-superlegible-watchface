@@ -272,46 +272,35 @@ These tables document the font-based approach that was used before switching to 
 ### Prerequisites
 
 **Required:**
-- [Nix package manager](https://nixos.org/download.html) with flakes enabled
-- [pebble.nix](https://github.com/pebble-dev/pebble.nix) (configured via flake.nix)
+- Python 3.x: `brew install python`
+- UV package manager: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- Pebble SDK: `uv tool install pebble-tool`
 
 **Recommended:**
-- [direnv](https://direnv.net/) for automatic environment activation
 - [Peekaboo](https://peekaboo.boo) for automated screenshots: `brew install peekaboo`
   - Requires Screen Recording permission in System Settings > Privacy & Security
 
 ### Environment Setup
 
-**Option 1: direnv (Automatic)**
+**Verify Installation:**
 ```bash
 cd ~/Developer/pebble-superlegible-watchface
-direnv allow  # Automatically activates Nix environment when entering directory
+pebble --version  # Should show Pebble SDK version
 ```
 
-**Option 2: Manual Nix Shell**
-```bash
-cd ~/Developer/pebble-superlegible-watchface
-nix develop  # Enter development shell manually
-```
+**No shell activation needed** - `pebble` command is globally available after UV installation.
 
 ### Building and Testing
 
 **Build:**
 ```bash
-# Inside Nix shell (after direnv allow or nix develop):
 pebble build
-
-# Or build without entering shell:
-nix develop -c pebble build
 ```
 
 **Test on Emulator:**
 ```bash
 # Start basalt (Pebble Time) emulator
 pebble install --emulator basalt
-
-# Or without entering shell:
-nix develop -c pebble install --emulator basalt
 
 # Test on other platforms:
 pebble install --emulator aplite   # Original Pebble (B&W)
@@ -411,7 +400,7 @@ When the user says:
 - **"Adjust spacing"** → For bitmap approach, spacing is baked into images; would need to regenerate bitmaps
 - **"Add padding on rectangular"** → Adjust quadrant dimensions in main.c (currently using full width/height)
 - **"Fix round display clipping"** → Adjust padding value in `#ifdef PBL_ROUND` section (currently 10px)
-- **"Build and test"** → Use: `pebble build && pebble install --emulator basalt` (or `nix develop -c pebble build` if not in shell)
+- **"Build and test"** → Use: `pebble build && pebble install --emulator basalt`
 - **"Screenshot the watchface"** → Use: `sleep 2 && peekaboo image --app "qemu-pebble" --path screenshots/watchface.png`
 - **"Different platform"** → Use `--emulator <platform>` flag (aplite, basalt, chalk, diorite, emery)
 - **"Test 12h format"** → Toggle Pebble system time format in emulator settings
@@ -497,32 +486,24 @@ When the user says:
 
 ### Build Issues
 
-**"command not found: nix"**
-- **Cause**: Nix not installed or not in PATH
-- **Solution**: Install Nix: `curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install`
-- **Alternative**: Use `whereis nix` to find installation, add to PATH
+**"command not found: uv"**
+- **Cause**: UV not installed or not in PATH
+- **Solution**: Install UV: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- **Fix PATH**: Add `export PATH="$HOME/.local/bin:$PATH"` to ~/.zshrc
 
 **"command not found: pebble"**
-- **Cause**: Not in Nix development shell
-- **Solution**: Run `direnv allow` or `nix develop` first
-- **Verification**: `which pebble` should show /nix/store/... path
+- **Cause**: Pebble SDK not installed
+- **Solution**: Install via UV: `uv tool install pebble-tool`
+- **Verification**: `which pebble` should show ~/.local/bin/pebble
 
 **Build succeeds but shows old version on emulator**
 - **Cause**: Cached build artifacts
 - **Solution**: `pebble clean && pebble build`
 - **Prevention**: Use clean build when troubleshooting
 
-**"experimental Nix feature 'flakes' is disabled"**
-- **Cause**: Flakes not enabled in Nix configuration
-- **Solution**: Add `--extra-experimental-features 'nix-command flakes'` to nix commands
-- **Permanent fix**: Enable in `~/.config/nix/nix.conf`: `experimental-features = nix-command flakes`
-
-**"install_name_tool: can't open file: .../arm-none-eabi-gdb" (pebble.nix toolchain build fails)**
-- **Cause**: Known issue with pebble.nix toolchain on certain macOS versions
-- **Error message**: `error: install_name_tool: can't open file: .../pebble-toolchain-bin-4.5/bin/arm-none-eabi-gdb`
-- **Workaround**: This is a known upstream issue with pebble.nix - may need to use alternative Pebble SDK installation method
-- **Status**: Investigating - may require pebble.nix update or alternative setup approach
-- **Note**: If you encounter this, document your working build method in this troubleshooting section
+**SDK update needed**
+- **Solution**: Update Pebble SDK via UV: `uv tool upgrade pebble-tool`
+- **Verification**: `pebble --version` shows latest version
 
 ### Emulator Issues
 

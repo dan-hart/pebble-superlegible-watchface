@@ -87,7 +87,7 @@ store-assets/
 2. **Build Release .pbw**
    ```bash
    cd ~/Developer/pebble-superlegible-watchface
-   nix-shell --run "pebble build"
+   pebble build
    # Output: build/pebble-superlegible-watchface.pbw
    ```
 
