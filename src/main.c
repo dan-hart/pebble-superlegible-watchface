@@ -20,6 +20,10 @@ static BitmapLayer *s_minute_ones_layer;
 static TextLayer *s_day_layer;   // Day of week (e.g., "Wed")
 static TextLayer *s_date_layer;  // Date number (e.g., "19")
 
+// Custom font for date display
+static GFont s_date_font;
+
+
 // Bitmaps for digits 0-9
 static GBitmap *s_digit_bitmaps[10];
 
@@ -169,6 +173,10 @@ static void main_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
+
+  // Load custom font for date display
+  s_date_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_ATKINSON_MONO_EXTRABOLD_28));
+
   // Load all digit bitmaps
   for (int i = 0; i < 10; i++) {
     s_digit_bitmaps[i] = gbitmap_create_with_resource(DIGIT_RESOURCE_IDS[i]);
@@ -229,32 +237,33 @@ static void main_window_load(Window *window) {
   layer_add_child(window_layer, bitmap_layer_get_layer(s_minute_ones_layer));
 
   // Create date display TextLayers (below time)
-  int16_t date_y_position = bounds.size.h - 30;  // Position near bottom
-  int16_t day_width = 60;  // Width for day abbreviation
-  int16_t date_width = 40;  // Width for date number
+  // Position at very bottom of screen with larger font
+  int16_t date_y_position = bounds.size.h - 35;  // Position at bottom
+  int16_t day_width = 72;  // Half screen width for day
+  int16_t date_width = 72;  // Half screen width for date
 
   #ifdef PBL_ROUND
     // For round displays, adjust positioning
-    int16_t date_y_offset = bounds.size.h - 40;
-    s_day_layer = text_layer_create(GRect(20, date_y_offset, day_width, 30));
-    s_date_layer = text_layer_create(GRect(bounds.size.w - date_width - 20, date_y_offset, date_width, 30));
+    int16_t date_y_offset = bounds.size.h - 45;
+    s_day_layer = text_layer_create(GRect(10, date_y_offset, day_width, 40));
+    s_date_layer = text_layer_create(GRect(bounds.size.w - date_width - 10, date_y_offset, date_width, 40));
   #else
-    // For rectangular displays
-    s_day_layer = text_layer_create(GRect(10, date_y_position, day_width, 30));
-    s_date_layer = text_layer_create(GRect(bounds.size.w - date_width - 10, date_y_position, date_width, 30));
+    // For rectangular displays - full width split in half
+    s_day_layer = text_layer_create(GRect(0, date_y_position, day_width, 40));
+    s_date_layer = text_layer_create(GRect(quadrant_width, date_y_position, date_width, 40));
   #endif
 
   // Configure day layer (left-aligned)
   text_layer_set_background_color(s_day_layer, GColorClear);
   text_layer_set_text_color(s_day_layer, GColorWhite);
-  text_layer_set_text_alignment(s_day_layer, GTextAlignmentLeft);
-  text_layer_set_font(s_day_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  text_layer_set_text_alignment(s_day_layer, GTextAlignmentCenter);
+  text_layer_set_font(s_day_layer, s_date_font);
 
   // Configure date layer (right-aligned)
   text_layer_set_background_color(s_date_layer, GColorClear);
   text_layer_set_text_color(s_date_layer, GColorWhite);
-  text_layer_set_text_alignment(s_date_layer, GTextAlignmentRight);
-  text_layer_set_font(s_date_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  text_layer_set_text_alignment(s_date_layer, GTextAlignmentCenter);
+  text_layer_set_font(s_date_layer, s_date_font);
 
   // Add date layers to window
   layer_add_child(window_layer, text_layer_get_layer(s_day_layer));
@@ -275,6 +284,10 @@ static void main_window_unload(Window *window) {
   // Destroy date TextLayers
   text_layer_destroy(s_day_layer);
   text_layer_destroy(s_date_layer);
+
+  // Unload custom font
+  fonts_unload_custom_font(s_date_font);
+
 
   // Unload all digit bitmaps
   for (int i = 0; i < 10; i++) {

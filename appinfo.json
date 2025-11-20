@@ -66,6 +66,13 @@
         "type": "bitmap",
         "name": "DIGIT_9",
         "file": "images/digit_9.png"
+      },
+      {
+        "type": "font",
+        "name": "ATKINSON_MONO_EXTRABOLD_28",
+        "file": "fonts/AtkinsonHyperlegibleMono-ExtraBold.ttf",
+        "characterRegex": "[0-9A-Za-z ]",
+        "trackingAdjust": 0
       }
     ]
   },
