@@ -3,12 +3,18 @@
   "shortName": "Superlegible",
   "longName": "Superlegible",
   "companyName": "Dan Hart",
-  "versionCode": 2,
-  "versionLabel": "1.1",
+  "versionCode": 3,
+  "versionLabel": "1.2",
   "watchapp": {
     "watchface": true
   },
-  "appKeys": {},
+  "capabilities": [
+    "configurable"
+  ],
+  "appKeys": {
+    "DATE_ENABLED": 0,
+    "LANGUAGE": 1
+  },
   "resources": {
     "media": [
       {

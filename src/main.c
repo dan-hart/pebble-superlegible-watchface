@@ -16,8 +16,43 @@ static BitmapLayer *s_hour_ones_layer;
 static BitmapLayer *s_minute_tens_layer;
 static BitmapLayer *s_minute_ones_layer;
 
+// Date display TextLayers
+static TextLayer *s_day_layer;   // Day of week (e.g., "Wed")
+static TextLayer *s_date_layer;  // Date number (e.g., "19")
+
 // Bitmaps for digits 0-9
 static GBitmap *s_digit_bitmaps[10];
+
+// Language support
+typedef enum {
+  LANGUAGE_ENGLISH = 0,
+  LANGUAGE_SPANISH = 1,
+  LANGUAGE_FRENCH = 2,
+  LANGUAGE_MANDARIN = 3,
+  LANGUAGE_HINDI = 4,
+  LANGUAGE_COUNT
+} Language;
+
+// Day abbreviations for each language
+static const char *DAY_ABBREVIATIONS[LANGUAGE_COUNT][7] = {
+  // English
+  {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"},
+  // Spanish (placeholder - ready for expansion)
+  {"Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"},
+  // French (placeholder - ready for expansion)
+  {"Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"},
+  // Mandarin Pinyin (placeholder - ready for expansion)
+  {"日", "一", "二", "三", "四", "五", "六"},
+  // Hindi Romanized (placeholder - ready for expansion)
+  {"Ravi", "Som", "Mangal", "Budh", "Guru", "Shukra", "Shani"}
+};
+
+// Settings
+#define SETTINGS_KEY_DATE_ENABLED 1
+#define SETTINGS_KEY_LANGUAGE 2
+
+static bool s_date_enabled = true;
+static Language s_language = LANGUAGE_ENGLISH;
 
 // Resource IDs for digit bitmaps
 static const uint32_t DIGIT_RESOURCE_IDS[] = {
@@ -87,9 +122,45 @@ static void update_time() {
   bitmap_layer_set_bitmap(s_minute_ones_layer, s_digit_bitmaps[minute_ones]);
 }
 
+// Update the date display
+static void update_date() {
+  if (!s_date_enabled) {
+    layer_set_hidden(text_layer_get_layer(s_day_layer), true);
+    layer_set_hidden(text_layer_get_layer(s_date_layer), true);
+    return;
+  }
+
+  // Get current time
+  time_t temp = time(NULL);
+  struct tm *tick_time = localtime(&temp);
+
+  // Get day of week (0 = Sunday, 6 = Saturday)
+  int day_of_week = tick_time->tm_wday;
+
+  // Get day of month
+  int day_of_month = tick_time->tm_mday;
+
+  // Format day of month as string
+  static char date_buffer[8];
+  snprintf(date_buffer, sizeof(date_buffer), "%d", day_of_month);
+
+  // Update TextLayers
+  text_layer_set_text(s_day_layer, DAY_ABBREVIATIONS[s_language][day_of_week]);
+  text_layer_set_text(s_date_layer, date_buffer);
+
+  // Show layers
+  layer_set_hidden(text_layer_get_layer(s_day_layer), false);
+  layer_set_hidden(text_layer_get_layer(s_date_layer), false);
+}
+
 // Tick handler - called every minute
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_time();
+
+  // Update date if day changed
+  if (units_changed & DAY_UNIT) {
+    update_date();
+  }
 }
 
 // Window load handler
@@ -157,6 +228,38 @@ static void main_window_load(Window *window) {
   layer_add_child(window_layer, bitmap_layer_get_layer(s_minute_tens_layer));
   layer_add_child(window_layer, bitmap_layer_get_layer(s_minute_ones_layer));
 
+  // Create date display TextLayers (below time)
+  int16_t date_y_position = bounds.size.h - 30;  // Position near bottom
+  int16_t day_width = 60;  // Width for day abbreviation
+  int16_t date_width = 40;  // Width for date number
+
+  #ifdef PBL_ROUND
+    // For round displays, adjust positioning
+    int16_t date_y_offset = bounds.size.h - 40;
+    s_day_layer = text_layer_create(GRect(20, date_y_offset, day_width, 30));
+    s_date_layer = text_layer_create(GRect(bounds.size.w - date_width - 20, date_y_offset, date_width, 30));
+  #else
+    // For rectangular displays
+    s_day_layer = text_layer_create(GRect(10, date_y_position, day_width, 30));
+    s_date_layer = text_layer_create(GRect(bounds.size.w - date_width - 10, date_y_position, date_width, 30));
+  #endif
+
+  // Configure day layer (left-aligned)
+  text_layer_set_background_color(s_day_layer, GColorClear);
+  text_layer_set_text_color(s_day_layer, GColorWhite);
+  text_layer_set_text_alignment(s_day_layer, GTextAlignmentLeft);
+  text_layer_set_font(s_day_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+
+  // Configure date layer (right-aligned)
+  text_layer_set_background_color(s_date_layer, GColorClear);
+  text_layer_set_text_color(s_date_layer, GColorWhite);
+  text_layer_set_text_alignment(s_date_layer, GTextAlignmentRight);
+  text_layer_set_font(s_date_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+
+  // Add date layers to window
+  layer_add_child(window_layer, text_layer_get_layer(s_day_layer));
+  layer_add_child(window_layer, text_layer_get_layer(s_date_layer));
+
   // Set window background to black
   window_set_background_color(window, GColorBlack);
 }
@@ -169,10 +272,48 @@ static void main_window_unload(Window *window) {
   bitmap_layer_destroy(s_minute_tens_layer);
   bitmap_layer_destroy(s_minute_ones_layer);
 
+  // Destroy date TextLayers
+  text_layer_destroy(s_day_layer);
+  text_layer_destroy(s_date_layer);
+
   // Unload all digit bitmaps
   for (int i = 0; i < 10; i++) {
     gbitmap_destroy(s_digit_bitmaps[i]);
   }
+}
+
+// AppMessage inbox received handler
+static void inbox_received_handler(DictionaryIterator *iter, void *context) {
+  // Read DATE_ENABLED setting
+  Tuple *date_enabled_tuple = dict_find(iter, MESSAGE_KEY_DATE_ENABLED);
+  if (date_enabled_tuple) {
+    s_date_enabled = date_enabled_tuple->value->int32 == 1;
+    persist_write_bool(SETTINGS_KEY_DATE_ENABLED, s_date_enabled);
+    update_date();  // Refresh display
+  }
+
+  // Read LANGUAGE setting
+  Tuple *language_tuple = dict_find(iter, MESSAGE_KEY_LANGUAGE);
+  if (language_tuple) {
+    s_language = (Language)language_tuple->value->int32;
+    persist_write_int(SETTINGS_KEY_LANGUAGE, (int)s_language);
+    update_date();  // Refresh display
+  }
+}
+
+// AppMessage inbox dropped handler
+static void inbox_dropped_handler(AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped! Reason: %d", (int)reason);
+}
+
+// AppMessage outbox failed handler
+static void outbox_failed_handler(DictionaryIterator *iter, AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Outbox send failed! Reason: %d", (int)reason);
+}
+
+// AppMessage outbox sent handler
+static void outbox_sent_handler(DictionaryIterator *iter, void *context) {
+  APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
 }
 
 // Initialize the app
@@ -186,14 +327,32 @@ static void init() {
     .unload = main_window_unload
   });
 
+  // Register AppMessage callbacks
+  app_message_register_inbox_received(inbox_received_handler);
+  app_message_register_inbox_dropped(inbox_dropped_handler);
+  app_message_register_outbox_failed(outbox_failed_handler);
+  app_message_register_outbox_sent(outbox_sent_handler);
+
+  // Open AppMessage with buffer sizes
+  app_message_open(128, 128);
+
   // Show the Window on the watch, with animated=true
   window_stack_push(s_main_window, true);
 
-  // Register with TickTimerService for minute updates
-  tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+  // Load settings from persistent storage
+  s_date_enabled = persist_exists(SETTINGS_KEY_DATE_ENABLED)
+                   ? persist_read_bool(SETTINGS_KEY_DATE_ENABLED)
+                   : true;
+  s_language = persist_exists(SETTINGS_KEY_LANGUAGE)
+               ? (Language)persist_read_int(SETTINGS_KEY_LANGUAGE)
+               : LANGUAGE_ENGLISH;
 
-  // Display the initial time
+  // Register with TickTimerService for minute and day updates
+  tick_timer_service_subscribe(MINUTE_UNIT | DAY_UNIT, tick_handler);
+
+  // Display the initial time and date
   update_time();
+  update_date();
 }
 
 // Deinitialize the app
