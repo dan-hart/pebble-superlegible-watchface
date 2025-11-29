@@ -481,6 +481,34 @@ See `SECURITY.md` for the complete security policy.
 
 ---
 
+## Security Limitations
+
+The pre-commit hook and server-side scanning provide defense-in-depth, but have known limitations:
+
+### Bypass Vectors
+- **`--no-verify` flag**: Bypasses local hooks (caught by pre-push and GitHub Actions)
+- **Fresh clones**: Must run `./scripts/install-hooks.sh` to enable protection
+- **GitHub web commits**: Not protected by local hooks (caught by GitHub Actions)
+
+### Pattern Evasion
+- **Base64 encoding**: Long encoded strings are flagged but short ones may pass
+- **Split across lines**: `key = part1 + part2` bypasses line-based scanning
+- **Unicode homoglyphs**: Look-alike characters may evade patterns
+- **Variable interpolation**: `${PREFIX}secret` assembled at runtime
+
+### Defense Layers
+1. **Pre-commit hook**: Scans staged files (client-side)
+2. **Pre-push hook**: Scans commits being pushed (client-side backup)
+3. **GitHub Actions**: Scans on push/PR (server-side enforcement)
+
+### Full Repository Scan
+For comprehensive scanning including git history:
+```bash
+./scripts/scan-repo.sh
+```
+
+---
+
 ## Known Issues and Gotchas
 
 ### 1. Bitmap Resources Must Be Present

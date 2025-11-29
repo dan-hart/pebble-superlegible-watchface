@@ -188,9 +188,39 @@ This project follows Pebble development best practices:
 Contributions are welcome! Please:
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Test on multiple platforms
-5. Submit a pull request
+3. **Set up security hooks** (see below)
+4. Make your changes
+5. Test on multiple platforms
+6. Submit a pull request
+
+## Security
+
+This repository uses defense-in-depth to prevent secrets from being committed:
+
+### Setup (Required for Contributors)
+
+After cloning, run:
+```bash
+./scripts/install-hooks.sh
+```
+
+This enables:
+- **Pre-commit hook**: Scans for API keys, tokens, passwords before commit
+- **Pre-push hook**: Backup scan before pushing
+- **GitHub Actions**: Server-side scanning on every push/PR
+
+### What's Protected
+
+The hooks detect secrets from: GitHub, OpenAI, Anthropic, Jira, AWS, Slack, Stripe, Google, Twilio, SendGrid, DigitalOcean, NPM, PyPI, and more.
+
+### Full Repository Scan
+
+To scan the entire git history:
+```bash
+./scripts/scan-repo.sh
+```
+
+See `SECURITY.md` for the complete security policy.
 
 ## Support This Project
 
