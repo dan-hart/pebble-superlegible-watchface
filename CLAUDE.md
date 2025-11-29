@@ -414,6 +414,68 @@ When the user says:
 - **"Test 12h format"** → Toggle Pebble system time format in emulator settings
 - **"Regenerate bitmaps"** → Would need external tool to render Atkinson Hyperlegible font to PNG images
 
+## Pre-Commit Security Requirements
+
+**CRITICAL**: Before creating ANY git commit, you MUST perform a security scan. This repository is public and must NEVER contain secrets.
+
+### Mandatory Pre-Commit Checklist
+
+Before every commit, scan ALL staged files for:
+
+1. **API Keys & Tokens**
+   - Patterns: `api_key`, `apikey`, `api-key`, `token`, `bearer`
+   - AWS patterns: `AKIA`, `aws_secret`, `aws_access`
+
+2. **Passwords & Secrets**
+   - Patterns: `password`, `passwd`, `secret`, `credential`
+   - Connection strings with credentials
+
+3. **Private Keys**
+   - Patterns: `-----BEGIN.*PRIVATE KEY-----`
+   - SSH keys, GPG keys, certificates
+
+4. **Environment Variables**
+   - Files: `.env`, `.env.local`, `.env.production`
+   - Patterns: `DATABASE_URL=`, `SECRET_KEY=`
+
+5. **Personal Information**
+   - Hardcoded paths containing usernames (e.g., `/Users/username/`)
+   - Email addresses (except in LICENSE/git config)
+   - Phone numbers
+
+### Automated Protection
+
+A pre-commit hook is installed that automatically scans for secrets. To install it:
+
+```bash
+./scripts/install-hooks.sh
+```
+
+The hook will block any commit containing patterns that look like secrets.
+
+### Manual Scan Command
+
+Run this to check staged files before committing:
+
+```bash
+git diff --cached --name-only | xargs grep -l -E -i \
+  '(api[_-]?key|token|bearer|password|secret|credential|AKIA|aws_|BEGIN.*PRIVATE|DATABASE_URL|SECRET_KEY)' \
+  2>/dev/null
+```
+
+### If Secrets Are Found
+
+1. **DO NOT COMMIT** - Stop immediately
+2. Remove the sensitive data from the file
+3. If the file should contain secrets, add it to `.gitignore`
+4. Re-scan before attempting commit again
+
+### Policy Reference
+
+See `SECURITY.md` for the complete security policy.
+
+---
+
 ## Known Issues and Gotchas
 
 ### 1. Bitmap Resources Must Be Present
@@ -629,7 +691,7 @@ When the user says:
 
 ---
 
-**Last Updated**: 2025-11-20
+**Last Updated**: 2025-11-29
 **Version**: 3.0 (Bitmap-based 2×2 quadrant layout)
 **Maintainer**: Dan Hart
 **Claude Code**: This file is optimized for Claude Code assistance
