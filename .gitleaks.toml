@@ -1,0 +1,14 @@
+# Gitleaks configuration
+# https://github.com/gitleaks/gitleaks
+
+title = "Gitleaks config for pebble-superlegible-watchface"
+
+[allowlist]
+  description = "Allowlisted files and paths"
+  paths = [
+    # Pre-commit hook contains example secret patterns for detection (not real secrets)
+    '''^\.githooks/pre-commit$''',
+    '''^\.githooks/pre-push$''',
+    # GitHub Actions workflow contains example patterns
+    '''^\.github/workflows/security-scan\.yml$''',
+  ]
