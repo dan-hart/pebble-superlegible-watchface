@@ -34,3 +34,6 @@ result-*
 *.tmp
 .cache/
 core
+
+# Claude Code local settings
+.claude/settings.local.json

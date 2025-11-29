@@ -10,7 +10,7 @@ import sys
 
 
 # Configuration
-PROJECT_DIR = Path("/Users/danhart/Developer/pebble-superlegible-watchface")
+PROJECT_DIR = Path(__file__).resolve().parent.parent.parent
 SCREENSHOTS_DIR = PROJECT_DIR / "store-assets" / "screenshots"
 OUTPUT_PATH = PROJECT_DIR / "store-assets" / "banner.png"
 

@@ -9,7 +9,7 @@ import re
 from pathlib import Path
 import os
 
-PROJECT_DIR = Path("/Users/danhart/Developer/pebble-superlegible-watchface")
+PROJECT_DIR = Path(__file__).resolve().parent.parent.parent
 SRC_FILE = PROJECT_DIR / "src" / "main.c"
 OUTPUT_DIR = PROJECT_DIR / "store-assets" / "screenshots" / "aplite"
 

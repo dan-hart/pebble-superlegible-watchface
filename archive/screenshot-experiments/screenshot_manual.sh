@@ -16,7 +16,7 @@ MINUTE=$3
 IS_24H=$4
 NAME=$5
 
-PROJECT_DIR="/Users/danhart/Developer/pebble-superlegible-watchface"
+PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 OUTPUT_DIR="$PROJECT_DIR/store-assets/screenshots/$PLATFORM"
 SRC_FILE="$PROJECT_DIR/src/main.c"
 
