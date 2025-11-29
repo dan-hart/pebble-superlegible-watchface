@@ -422,26 +422,31 @@ When the user says:
 
 Before every commit, scan ALL staged files for:
 
-1. **API Keys & Tokens**
-   - Patterns: `api_key`, `apikey`, `api-key`, `token`, `bearer`
-   - AWS patterns: `AKIA`, `aws_secret`, `aws_access`
+1. **Service-Specific API Keys** (auto-detected by pattern)
+   - **GitHub**: `ghp_`, `github_pat_`, `gho_`, `ghu_`, `ghs_`, `ghr_`
+   - **OpenAI**: `sk-` followed by 20+ alphanumeric characters
+   - **Anthropic**: `sk-ant-` prefix
+   - **Jira/Atlassian**: `ATLASSIAN_API_TOKEN`, `JIRA_API_TOKEN`, `ATATT` prefix
+   - **AWS**: `AKIA`, `ABIA`, `ACCA`, `AGPA`, `AIDA`, `AIPA`, `ANPA`, `ANVA`, `APKA`, `AROA`, `ASCA`, `ASIA`
+   - **Slack**: `xoxb-`, `xoxp-`, `xoxa-`, `xoxr-`, `xoxs-`
+   - **Stripe**: `sk_live_`, `sk_test_`, `pk_live_`, `pk_test_`, `rk_live_`, `rk_test_`
+   - **Google**: `AIza` prefix, service account JSON
+   - **Discord**: Bot tokens
 
 2. **Passwords & Secrets**
-   - Patterns: `password`, `passwd`, `secret`, `credential`
-   - Connection strings with credentials
+   - Patterns: `password`, `passwd`, `pwd` with assignments
+   - Connection strings with embedded credentials (`://user:pass@host`)
 
 3. **Private Keys**
-   - Patterns: `-----BEGIN.*PRIVATE KEY-----`
-   - SSH keys, GPG keys, certificates
+   - All formats: RSA, OPENSSH, EC, PGP, DSA, encrypted
+   - Pattern: `-----BEGIN.*PRIVATE KEY-----`
 
 4. **Environment Variables**
-   - Files: `.env`, `.env.local`, `.env.production`
-   - Patterns: `DATABASE_URL=`, `SECRET_KEY=`
+   - `SECRET_KEY`, `ENCRYPTION_KEY`, `SIGNING_KEY`, `JWT_SECRET`, `SESSION_SECRET`
+   - `DATABASE_URL`, `MONGO_URI`, `REDIS_URL`
 
 5. **Personal Information**
-   - Hardcoded paths containing usernames (e.g., `/Users/username/`)
-   - Email addresses (except in LICENSE/git config)
-   - Phone numbers
+   - Hardcoded paths containing usernames (macOS `/Users/...`, Linux `/home/...`)
 
 ### Automated Protection
 
