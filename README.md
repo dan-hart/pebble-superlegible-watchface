@@ -12,7 +12,7 @@ A minimalist Pebble watchface focused on maximum readability using the Atkinson 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow?logo=buy-me-a-coffee)](https://buymeacoffee.com/codedbydan)
 
 <p align="center">
-  <img src="screenshots/watchface.png" alt="Superlegible Watchface" width="300">
+  <img src="store-assets/banner.png" alt="Superlegible Watchface" width="600">
 </p>
 
 ## Features
