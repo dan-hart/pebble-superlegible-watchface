@@ -20,6 +20,20 @@ static BitmapLayer *s_minute_ones_layer;
 static GBitmap *s_digit_bitmaps[10];
 
 // Resource IDs for digit bitmaps
+#ifdef PBL_PLATFORM_EMERY
+static const uint32_t DIGIT_RESOURCE_IDS[] = {
+  RESOURCE_ID_DIGIT_EMERY_0,
+  RESOURCE_ID_DIGIT_EMERY_1,
+  RESOURCE_ID_DIGIT_EMERY_2,
+  RESOURCE_ID_DIGIT_EMERY_3,
+  RESOURCE_ID_DIGIT_EMERY_4,
+  RESOURCE_ID_DIGIT_EMERY_5,
+  RESOURCE_ID_DIGIT_EMERY_6,
+  RESOURCE_ID_DIGIT_EMERY_7,
+  RESOURCE_ID_DIGIT_EMERY_8,
+  RESOURCE_ID_DIGIT_EMERY_9
+};
+#else
 static const uint32_t DIGIT_RESOURCE_IDS[] = {
   RESOURCE_ID_DIGIT_0,
   RESOURCE_ID_DIGIT_1,
@@ -32,6 +46,7 @@ static const uint32_t DIGIT_RESOURCE_IDS[] = {
   RESOURCE_ID_DIGIT_8,
   RESOURCE_ID_DIGIT_9
 };
+#endif
 
 // Update the time display
 static void update_time() {
@@ -103,11 +118,24 @@ static void main_window_load(Window *window) {
     s_digit_bitmaps[i] = gbitmap_create_with_resource(DIGIT_RESOURCE_IDS[i]);
   }
 
-  // Calculate quadrant dimensions (2x2 grid)
-  int16_t quadrant_width = bounds.size.w / 2;   // 72px
-  int16_t quadrant_height = bounds.size.h / 2;  // 84px
+#if !defined(PBL_ROUND) && !defined(PBL_PLATFORM_EMERY)
+  // Calculate rectangular quadrant dimensions (2x2 grid)
+  int16_t quadrant_width = bounds.size.w / 2;
+  int16_t quadrant_height = bounds.size.h / 2;
+#endif
 
-  #ifdef PBL_ROUND
+#ifdef PBL_PLATFORM_EMERY
+    // Pebble Time 2 keeps a small perimeter inset while using the full
+    // remaining display area for paired hour and minute digits.
+    int16_t padding = 10;
+    int16_t adjusted_width = (bounds.size.w - 2 * padding) / 2;
+    int16_t adjusted_height = (bounds.size.h - 2 * padding) / 2;
+
+    s_hour_tens_layer = bitmap_layer_create(GRect(padding, padding, adjusted_width, adjusted_height));
+    s_hour_ones_layer = bitmap_layer_create(GRect(padding + adjusted_width, padding, adjusted_width, adjusted_height));
+    s_minute_tens_layer = bitmap_layer_create(GRect(padding, padding + adjusted_height, adjusted_width, adjusted_height));
+    s_minute_ones_layer = bitmap_layer_create(GRect(padding + adjusted_width, padding + adjusted_height, adjusted_width, adjusted_height));
+#elif defined(PBL_ROUND)
     // For round displays, use padding in quadrant layout
     int16_t padding = 10;
     int16_t adjusted_width = (bounds.size.w - 2 * padding) / 2;
@@ -124,7 +152,7 @@ static void main_window_load(Window *window) {
 
     // Bottom-right quadrant: minute ones
     s_minute_ones_layer = bitmap_layer_create(GRect(padding + adjusted_width, padding + adjusted_height, adjusted_width, adjusted_height));
-  #else
+#else
     // For rectangular displays - 2x2 quadrant grid
     // Top-left quadrant: hour tens (reduced height by 1px for row padding)
     s_hour_tens_layer = bitmap_layer_create(GRect(0, 0, quadrant_width, quadrant_height - 1));
@@ -137,7 +165,7 @@ static void main_window_load(Window *window) {
 
     // Bottom-right quadrant: minute ones
     s_minute_ones_layer = bitmap_layer_create(GRect(quadrant_width, quadrant_height, quadrant_width, quadrant_height));
-  #endif
+#endif
 
   // Configure all bitmap layers
   bitmap_layer_set_compositing_mode(s_hour_tens_layer, GCompOpSet);
@@ -145,11 +173,17 @@ static void main_window_load(Window *window) {
   bitmap_layer_set_compositing_mode(s_minute_tens_layer, GCompOpSet);
   bitmap_layer_set_compositing_mode(s_minute_ones_layer, GCompOpSet);
 
-  // Set background color to black for all layers
-  bitmap_layer_set_background_color(s_hour_tens_layer, GColorBlack);
-  bitmap_layer_set_background_color(s_hour_ones_layer, GColorBlack);
-  bitmap_layer_set_background_color(s_minute_tens_layer, GColorBlack);
-  bitmap_layer_set_background_color(s_minute_ones_layer, GColorBlack);
+#ifdef PBL_PLATFORM_EMERY
+  GColor background_color = GColorFromHEX(0x000055);
+#else
+  GColor background_color = GColorBlack;
+#endif
+
+  // Set background color for all layers
+  bitmap_layer_set_background_color(s_hour_tens_layer, background_color);
+  bitmap_layer_set_background_color(s_hour_ones_layer, background_color);
+  bitmap_layer_set_background_color(s_minute_tens_layer, background_color);
+  bitmap_layer_set_background_color(s_minute_ones_layer, background_color);
 
   // Add all layers to the window
   layer_add_child(window_layer, bitmap_layer_get_layer(s_hour_tens_layer));
@@ -157,8 +191,7 @@ static void main_window_load(Window *window) {
   layer_add_child(window_layer, bitmap_layer_get_layer(s_minute_tens_layer));
   layer_add_child(window_layer, bitmap_layer_get_layer(s_minute_ones_layer));
 
-  // Set window background to black
-  window_set_background_color(window, GColorBlack);
+  window_set_background_color(window, background_color);
 }
 
 // Window unload handler
