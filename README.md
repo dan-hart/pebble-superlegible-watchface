@@ -11,7 +11,9 @@ A Pebble watchface that fills the display with large, high-contrast digits set i
 1. Open the [Pebble App Store listing](https://apps.repebble.com/95524892423d4e7f95f28b15) and choose **Add to My Faces**.
 2. In the Pebble phone app, select **Superlegible** from your watchface library.
 
-The store page also offers **Download PBW** for manual installation. The Pebble App Store edition has a new app ID and installs alongside earlier builds that use the original ID. If you switch editions, set your colors again in the new one.
+For manual installation, download `Superlegible-1.3.0.pbw` from the [GitHub 1.3.0 release](https://github.com/dan-hart/pebble-superlegible-watchface/releases/tag/v1.3.0) or choose **Download PBW** on the Pebble App Store page. Both downloads contain the same watchface.
+
+The Pebble App Store edition has a new app ID and installs alongside earlier builds that use the original ID. If you switch editions, set your colors again in the new one.
 
 ## Set your colors
 
