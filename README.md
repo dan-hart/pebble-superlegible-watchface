@@ -1,262 +1,99 @@
 # Superlegible
 
-A minimalist Pebble watchface focused on maximum readability using the Atkinson Hyperlegible font.
+A Pebble watchface that fills the display with large, high-contrast digits set in Atkinson Hyperlegible.
 
-![Version](https://img.shields.io/badge/version-1.3-blue)
-![Platforms](https://img.shields.io/badge/platforms-Aplite%20%7C%20Basalt%20%7C%20Chalk%20%7C%20Diorite%20%7C%20Emery%20%7C%20Gabbro-green)
-![License](https://img.shields.io/badge/license-GPLv3-blue)
-![GitHub stars](https://img.shields.io/github/stars/dan-hart/pebble-superlegible-watchface?style=social)
-![GitHub forks](https://img.shields.io/github/forks/dan-hart/pebble-superlegible-watchface?style=social)
-![GitHub issues](https://img.shields.io/github/issues/dan-hart/pebble-superlegible-watchface)
-![GitHub last commit](https://img.shields.io/github/last-commit/dan-hart/pebble-superlegible-watchface)
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow?logo=buy-me-a-coffee)](https://buymeacoffee.com/codedbydan)
+**[Get Superlegible on the Pebble App Store](https://apps.repebble.com/95524892423d4e7f95f28b15)** · [Supported watches](#supported-watches) · [Build from source](#build-from-source)
 
-<p align="center">
-  <img src="store-assets/banner.png" alt="Superlegible Watchface" width="600">
-</p>
+![Superlegible on Pebble Round 2, showing 09:17 in large white digits](store-assets/pebble-round-2-banner.png)
 
-## Features
+## Install
 
-- **Maximum Size**: Time displayed as large as possible
-- **Ultimate Simplicity**: Just the time, nothing else
-- **Maximum Legibility**: Atkinson Hyperlegible font designed by Braille Institute
-- **Auto Time Format**: Automatically detects and respects your system 12h/24h preference
-- **Universal**: Supports Pebble Classic through Round 2
-- **Battery Efficient**: Updates only once per minute
+1. Open the [Pebble App Store listing](https://apps.repebble.com/95524892423d4e7f95f28b15) and choose **Add to My Faces**.
+2. In the Pebble phone app, select **Superlegible** from your watchface library.
 
-## Installation
+The store page also offers **Download PBW** for manual installation. The Pebble App Store edition has a new app ID and installs alongside earlier builds that use the original ID. If you switch editions, set your colors again in the new one.
 
-### Manual Installation
+## Set your colors
 
-1. Download the `.pbw` file from the [Releases](https://github.com/dan-hart/pebble-superlegible-watchface/releases) page
-2. Open the Pebble app on your phone
-3. Go to Settings → Apps
-4. Tap "Install Watch App"
-5. Select the downloaded `.pbw` file
+Open the gear next to **Superlegible** in the Pebble phone app. Choose **Digits** and **Background**, then tap **Save**. Use different colors with enough contrast to read at a glance.
 
-### Building from Source
+- **Color watches** offer the Pebble palette. Time 2 starts with orange digits on navy. Other models start with white digits on black.
+- **Black-and-white watches** support white on black or black on white.
 
-**Prerequisites**:
-- Node.js with npm
-- Python 3.x: `brew install python`
-- UV package manager: `curl -LsSf https://astral.sh/uv/install.sh | sh`
-- Pebble SDK 4.44 (tested): `uv tool install pebble-tool`, then `pebble sdk install 4.44`
-- [Peekaboo](https://peekaboo.boo) (optional, for screenshot verification)
-  ```bash
-  brew install peekaboo
-  ```
-  - Requires Screen Recording permission: System Settings > Privacy & Security > Screen Recording
+The watch saves your palette locally and follows its own 12- or 24-hour time setting. In 12-hour mode, single-digit hours have no leading zero. The display updates once a minute.
 
-**Development Setup**:
+## Supported watches
+
+| Watch | SDK target | Display |
+| --- | --- | --- |
+| Original Pebble and Pebble Steel | `aplite` | 144 × 168, monochrome |
+| Pebble Time and Time Steel | `basalt` | 144 × 168, color |
+| Pebble Time Round | `chalk` | 180 × 180, round color |
+| Pebble 2 and Pebble 2 Duo | `diorite` | 144 × 168, monochrome |
+| Pebble Time 2 | `emery` | 200 × 228, color |
+| Pebble Round 2 | `gabbro` | 260 × 260, round color |
+
+Pebble 2 Duo runs the compatible `diorite` binary. The package includes native builds for Time 2 and Round 2.
+
+## What's new in 1.3.0
+
+- The Pebble App Store listing has custom icons and a banner for each supported target.
+- The phone app now lets you choose digit and background colors for each watch.
+- Pebble Time 2 uses display-sized digit bitmaps with a 10-pixel inset.
+- Pebble Round 2 uses upright digits with room around the bezel. A single-digit hour lines up with the right-hand minute digit.
+
+## Build from source
+
+Install Node.js with npm, Python 3.10–3.13, and [uv](https://docs.astral.sh/uv/getting-started/installation/). Follow the [Pebble SDK setup guide](https://developer.repebble.com/sdk/) for your operating system. Version 1.3.0 was built with SDK 4.44, which requires `pebble-tool` 5.1.0 or later.
 
 ```bash
-# Clone the repository
+uv tool install --python 3.12 'pebble-tool>=5.1.0'
+pebble sdk install 4.44
+
 git clone https://github.com/dan-hart/pebble-superlegible-watchface.git
 cd pebble-superlegible-watchface
-
-# Verify Pebble SDK is installed
-pebble --version
-```
-
-**Build**:
-
-```bash
-# Build the watchface
 npm ci
 pebble build
-
-# The .pbw file will be in build/
 ```
 
-**Install to Emulator**:
-```bash
-pebble install --emulator basalt
-```
-
-**Install to Physical Watch**:
-```bash
-pebble install --phone <IP_ADDRESS>
-```
-
-**Complete Build and Test Workflow**:
+The SDK writes the compiled `.pbw` to `build/`. Use the target codes above to run the watchface on different emulator displays.
 
 ```bash
-# 1. Clone and setup
-git clone https://github.com/dan-hart/pebble-superlegible-watchface.git
-cd pebble-superlegible-watchface
-
-# 2. Build
-npm ci
-pebble build
-
-# 3. Install and test on emulator
-pebble install --emulator basalt
-
-# 4. Capture screenshot (optional, requires peekaboo)
-sleep 2 && peekaboo image --app "qemu-pebble" --path screenshots/watchface.png
-open screenshots/watchface.png
+pebble install --emulator gabbro
 ```
 
-**Test on Multiple Platforms**:
+For a physical watch, enable **Dev Connection** in the Pebble phone app and use the [SDK's device installation instructions](https://developer.repebble.com/sdk/#next-steps).
+
+### Run the tests
 
 ```bash
-# Test each native target
-for platform in aplite basalt chalk diorite emery gabbro; do
-  echo "Testing $platform..."
-  pebble install --emulator $platform
-  sleep 2
-  # Optional: capture screenshot of each platform
-  # peekaboo image --app "qemu-pebble" --path "screenshots/${platform}.png"
-done
+python3 -m unittest discover -s tests
+node --test tests/phone-settings.test.js
 ```
 
-**Troubleshooting**:
+Run the Node test after `pebble build` so it exercises the bundled PebbleKit JS. The Python tests check the Time 2 and Round 2 digit layouts. Before submitting visual changes, check both time formats and a custom palette on the platforms you changed.
 
-- **Build fails**: Try `pebble clean && pebble build`
-- **Emulator won't launch**: Run `pebble kill` to stop stuck instances
-- **"command not found: pebble"**: Install Pebble SDK: `uv tool install pebble-tool`
-- **Screenshot is blank**: Increase delay (try `sleep 3` or `sleep 5`)
-- **Permission denied (peekaboo)**: Grant Screen Recording permission to Terminal in System Settings
+### Update the Pebble App Store release
 
-For more troubleshooting help, see `CLAUDE.md` Troubleshooting section.
+The [Pebble App Store listing](https://apps.repebble.com/95524892423d4e7f95f28b15) uses UUID `3e371e59-7411-42f6-b6b4-25b055e37ffa`. The repo's default `pebble.uuid` in [package.json](package.json) identifies the earlier edition.
 
-## Configuration
+For a store release, use a separate checkout. Set `pebble.uuid` to the store UUID and set the package version to a version Pebble has never received for this listing. Build, confirm the PBW includes all six targets, then open **New Release** on the existing listing in the [Pebble Developer Dashboard](https://developer.repebble.com/dashboard).
 
-Open Superlegible’s settings gear in the Pebble phone app, pick **Digits** and
-**Background**, then tap **Save**. Color watches offer the Pebble color palette.
-Monochrome watches offer black and white. Choose two different colors so the
-time stays visible.
+## Project files
 
-The Time 2 starts with orange digits on navy. Other models start with white
-digits on black. The watch remembers your selection when the phone is offline.
-The face follows the watch’s 12/24-hour setting.
+| Path | Contents |
+| --- | --- |
+| [src/main.c](src/main.c) | Digit layout, clock updates, and on-watch palette storage |
+| [src/pkjs/](src/pkjs/) | Pebble phone settings and palette sync |
+| [resources/](resources/) | Atkinson Hyperlegible fonts and pre-rendered digit bitmaps |
+| [store-assets/](store-assets/) | Listing artwork and screenshots |
+| [tools/](tools/README.md) | Screenshot, banner, and digit-generation utilities |
+| [Design/](Design/) | GIMP source files and mockups |
 
-## Technical Details
+## Contribute
 
-**Display Method**: Bitmap-based rendering with 2x2 quadrant layout
-- Four individual digit bitmaps (hour tens, hour ones, minute tens, minute ones)
-- Each digit rendered using Atkinson Hyperlegible font at maximum size
-- Optimized for each platform's display dimensions
-- 12h format intelligently hides leading zero for single-digit hours
+Install the repository's security hooks with `./scripts/install-hooks.sh`. See the [security policy](SECURITY.md) for details. When reporting a display or color issue, include your watch model, time format, and a screenshot if you can.
 
-**Font**: Atkinson Hyperlegible
-- Designed by Braille Institute specifically for legibility
-- Used to generate high-quality digit bitmaps
-- Licensed under SIL Open Font License v1.1
+[Report an issue](https://github.com/dan-hart/pebble-superlegible-watchface/issues) · [Support the project](https://buymeacoffee.com/codedbydan)
 
-**Supported Platforms**:
-- Pebble (Aplite) - 144x168 Black & White
-- Pebble Time (Basalt) - 144x168 Color
-- Pebble Time Round (Chalk) - 180x180 Color, Round
-- Pebble 2 (Diorite) - 144x168 Black & White
-- Pebble Time 2 (Emery) - 200x228 Color
-- Pebble Round 2 (Gabbro) - 260x260 Color, round. Upright digits clear the bezel by at least 8 pixels. Single-digit hours align with the right-hand minute digit.
-
-**Memory Usage**:
-- Resources: 6-8KB (depending on platform)
-- RAM: ~1KB
-- Very efficient and lightweight
-
-## Repository Structure
-
-```
-pebble-superlegible-watchface/
-├── resources/          # Digit bitmaps and fonts
-├── src/                # C source code
-├── store-assets/       # App store submission assets
-│   ├── screenshots/    # Screenshots for all platforms
-│   └── banner.png      # Store banner
-├── tools/              # Development utilities
-│   ├── screenshots/    # Screenshot generation tools
-│   └── banner/         # Banner generation tools
-├── Design/             # GIMP design files and mockups
-├── archive/            # Archived experimental code
-├── package.json        # App metadata and settings dependency
-├── wscript             # Build configuration
-```
-
-**Development Tools** (see `tools/README.md`):
-- `tools/screenshots/generate_screenshots_programmatic.py` - Generate all screenshots automatically
-- `tools/screenshots/crop_screenshots.py` - Crop and resize screenshots
-- `tools/banner/generate_banner.py` - Generate store banner image
-
-## Development
-
-This project follows Pebble development best practices:
-- Clean init/deinit pattern
-- Proper resource management
-- Platform-specific optimizations
-- Battery-efficient updates
-- Comprehensive documentation
-
-## Contributing
-
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. **Set up security hooks** (see below)
-4. Make your changes
-5. Test on multiple platforms
-6. Submit a pull request
-
-## Security
-
-This repository uses defense-in-depth to prevent secrets from being committed:
-
-### Setup (Required for Contributors)
-
-After cloning, run:
-```bash
-./scripts/install-hooks.sh
-```
-
-This enables:
-- **Pre-commit hook**: Scans for API keys, tokens, passwords before commit
-- **Pre-push hook**: Backup scan before pushing
-- **GitHub Actions**: Server-side scanning on every push/PR
-
-### What's Protected
-
-The hooks detect secrets from: GitHub, OpenAI, Anthropic, Jira, AWS, Slack, Stripe, Google, Twilio, SendGrid, DigitalOcean, NPM, PyPI, and more.
-
-### Full Repository Scan
-
-To scan the entire git history:
-```bash
-./scripts/scan-repo.sh
-```
-
-See `SECURITY.md` for the complete security policy.
-
-## Support This Project
-
-If you find Superlegible useful and want to support its development:
-
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-yellow?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/codedbydan)
-
-Your support helps maintain this project and develop new features!
-
-## Credits
-
-- **Font**: [Atkinson Hyperlegible](https://brailleinstitute.org/freefont) by Braille Institute of America
-- **Developer**: Dan Hart
-- **Build SDK**: Pebble SDK 4.44
-
-## License
-
-- **Code**: GNU GPLv3 License (see LICENSE file)
-- **Font**: SIL Open Font License v1.1 (see OFL.txt)
-
-## Related Projects
-
-- **Modern Citizen**: A comprehensive watchface with date, weather, and temperature
-
-## Support
-
-For issues, questions, or suggestions:
-- Open an issue on GitHub
-- Support development: [Buy Me a Coffee](https://buymeacoffee.com/codedbydan)
-
----
-
-**Superlegible** - Maximum readability, minimal complexity.
+Superlegible is developed by Dan Hart and licensed under the [GNU GPL v3](LICENSE). [Atkinson Hyperlegible](https://brailleinstitute.org/freefont) is designed by Braille Institute and distributed under the [SIL Open Font License](OFL.txt).
