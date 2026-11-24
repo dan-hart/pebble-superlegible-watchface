@@ -2,8 +2,8 @@
 
 A minimalist Pebble watchface focused on maximum readability using the Atkinson Hyperlegible font.
 
-![Version](https://img.shields.io/badge/version-1.2-blue)
-![Platforms](https://img.shields.io/badge/platforms-Aplite%20%7C%20Basalt%20%7C%20Chalk%20%7C%20Diorite%20%7C%20Emery-green)
+![Version](https://img.shields.io/badge/version-1.3-blue)
+![Platforms](https://img.shields.io/badge/platforms-Aplite%20%7C%20Basalt%20%7C%20Chalk%20%7C%20Diorite%20%7C%20Emery%20%7C%20Gabbro-green)
 ![License](https://img.shields.io/badge/license-GPLv3-blue)
 ![GitHub stars](https://img.shields.io/github/stars/dan-hart/pebble-superlegible-watchface?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/dan-hart/pebble-superlegible-watchface?style=social)
@@ -21,7 +21,7 @@ A minimalist Pebble watchface focused on maximum readability using the Atkinson 
 - **Ultimate Simplicity**: Just the time, nothing else
 - **Maximum Legibility**: Atkinson Hyperlegible font designed by Braille Institute
 - **Auto Time Format**: Automatically detects and respects your system 12h/24h preference
-- **Universal**: Works on all 5 Pebble platforms
+- **Universal**: Supports Pebble Classic through Round 2
 - **Battery Efficient**: Updates only once per minute
 
 ## Installation
@@ -40,7 +40,7 @@ A minimalist Pebble watchface focused on maximum readability using the Atkinson 
 - Node.js with npm
 - Python 3.x: `brew install python`
 - UV package manager: `curl -LsSf https://astral.sh/uv/install.sh | sh`
-- Pebble SDK: `uv tool install pebble-tool`
+- Pebble SDK 4.44 (tested): `uv tool install pebble-tool`, then `pebble sdk install 4.44`
 - [Peekaboo](https://peekaboo.boo) (optional, for screenshot verification)
   ```bash
   brew install peekaboo
@@ -100,8 +100,8 @@ open screenshots/watchface.png
 **Test on Multiple Platforms**:
 
 ```bash
-# Test on all 5 Pebble platforms
-for platform in aplite basalt chalk diorite emery; do
+# Test each native target
+for platform in aplite basalt chalk diorite emery gabbro; do
   echo "Testing $platform..."
   pebble install --emulator $platform
   sleep 2
@@ -150,6 +150,7 @@ The face follows the watch’s 12/24-hour setting.
 - Pebble Time Round (Chalk) - 180x180 Color, Round
 - Pebble 2 (Diorite) - 144x168 Black & White
 - Pebble Time 2 (Emery) - 200x228 Color
+- Pebble Round 2 (Gabbro) - 260x260 Color, round. Upright digits clear the bezel by at least 8 pixels. Single-digit hours are centered above the minutes.
 
 **Memory Usage**:
 - Resources: 6-8KB (depending on platform)
@@ -239,7 +240,7 @@ Your support helps maintain this project and develop new features!
 
 - **Font**: [Atkinson Hyperlegible](https://brailleinstitute.org/freefont) by Braille Institute of America
 - **Developer**: Dan Hart
-- **SDK**: Pebble SDK 3 via UV package manager
+- **Build SDK**: Pebble SDK 4.44
 
 ## License
 

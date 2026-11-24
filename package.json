@@ -1,7 +1,7 @@
 {
   "name": "superlegible",
   "author": "Dan Hart",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "keywords": [
     "pebble-app"
@@ -16,7 +16,8 @@
       "basalt",
       "chalk",
       "diorite",
-      "emery"
+      "emery",
+      "gabbro"
     ],
     "enableMultiJS": true,
     "capabilities": [
@@ -40,7 +41,8 @@
             "aplite",
             "basalt",
             "chalk",
-            "diorite"
+            "diorite",
+            "gabbro"
           ],
           "memoryFormat": "2BitPalette"
         },
@@ -52,7 +54,8 @@
             "aplite",
             "basalt",
             "chalk",
-            "diorite"
+            "diorite",
+            "gabbro"
           ],
           "memoryFormat": "2BitPalette"
         },
@@ -64,7 +67,8 @@
             "aplite",
             "basalt",
             "chalk",
-            "diorite"
+            "diorite",
+            "gabbro"
           ],
           "memoryFormat": "2BitPalette"
         },
@@ -76,7 +80,8 @@
             "aplite",
             "basalt",
             "chalk",
-            "diorite"
+            "diorite",
+            "gabbro"
           ],
           "memoryFormat": "2BitPalette"
         },
@@ -88,7 +93,8 @@
             "aplite",
             "basalt",
             "chalk",
-            "diorite"
+            "diorite",
+            "gabbro"
           ],
           "memoryFormat": "2BitPalette"
         },
@@ -100,7 +106,8 @@
             "aplite",
             "basalt",
             "chalk",
-            "diorite"
+            "diorite",
+            "gabbro"
           ],
           "memoryFormat": "2BitPalette"
         },
@@ -112,7 +119,8 @@
             "aplite",
             "basalt",
             "chalk",
-            "diorite"
+            "diorite",
+            "gabbro"
           ],
           "memoryFormat": "2BitPalette"
         },
@@ -124,7 +132,8 @@
             "aplite",
             "basalt",
             "chalk",
-            "diorite"
+            "diorite",
+            "gabbro"
           ],
           "memoryFormat": "2BitPalette"
         },
@@ -136,7 +145,8 @@
             "aplite",
             "basalt",
             "chalk",
-            "diorite"
+            "diorite",
+            "gabbro"
           ],
           "memoryFormat": "2BitPalette"
         },
@@ -148,7 +158,8 @@
             "aplite",
             "basalt",
             "chalk",
-            "diorite"
+            "diorite",
+            "gabbro"
           ],
           "memoryFormat": "2BitPalette"
         },

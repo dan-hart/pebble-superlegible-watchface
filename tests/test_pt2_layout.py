@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-STANDARD_PLATFORMS = ["aplite", "basalt", "chalk", "diorite"]
+STANDARD_PLATFORMS = ["aplite", "basalt", "chalk", "diorite", "gabbro"]
 EMERY_PADDING = 10
 EMERY_DIGIT_SIZE = (90, 104)
 EMERY_BACKGROUND_COLOR = "GColorFromHEX(0x000055)"
