@@ -17,7 +17,6 @@ class Round2LayoutTest(unittest.TestCase):
         column_gap, row_gap = layout["COLUMN_GAP"], layout["ROW_GAP"]
         left = (260 - 2 * width - column_gap) // 2
         right = left + width + column_gap
-        middle = (260 - width) // 2
         top = (260 - 2 * height - row_gap) // 2
         bottom = top + height + row_gap
 
@@ -46,8 +45,6 @@ class Round2LayoutTest(unittest.TestCase):
                     shown = hour if is_24h else (hour % 12 or 12)
                     if is_24h or shown >= 10:
                         check_digit(shown // 10, left, top)
-                        check_digit(shown % 10, right, top)
-                    else:
-                        check_digit(shown, middle, top)
+                    check_digit(shown % 10, right, top)
                     check_digit(minute // 10, left, bottom)
                     check_digit(minute % 10, right, bottom)

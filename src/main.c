@@ -141,12 +141,12 @@ static const uint32_t DIGIT_RESOURCE_IDS[] = {
 #endif
 
 #ifdef PBL_PLATFORM_GABBRO
-// Fixed-size glyphs share a baseline. Center each row on the round display.
+// Fixed-size glyphs share a baseline. Center the two-column grid on the round display.
 enum { ROUND2_WIDTH = 80, ROUND2_HEIGHT = 94, ROUND2_COLUMN_GAP = 4, ROUND2_ROW_GAP = 6 };
 
-static GRect round2_digit_frame(int column, int row, bool single_digit) {
+static GRect round2_digit_frame(int column, int row) {
   GRect bounds = layer_get_bounds(window_get_root_layer(s_main_window));
-  int row_width = single_digit ? ROUND2_WIDTH : 2 * ROUND2_WIDTH + ROUND2_COLUMN_GAP;
+  int row_width = 2 * ROUND2_WIDTH + ROUND2_COLUMN_GAP;
   int x = (bounds.size.w - row_width) / 2 + column * (ROUND2_WIDTH + ROUND2_COLUMN_GAP);
   int y = (bounds.size.h - 2 * ROUND2_HEIGHT - ROUND2_ROW_GAP) / 2 + row * (ROUND2_HEIGHT + ROUND2_ROW_GAP);
   return GRect(x, y, ROUND2_WIDTH, ROUND2_HEIGHT);
@@ -202,11 +202,6 @@ static void update_time() {
     layer_set_hidden(bitmap_layer_get_layer(s_hour_tens_layer), false);
   }
 
-#ifdef PBL_PLATFORM_GABBRO
-  bool single_hour = !use_24h && hour_tens == 0;
-  layer_set_frame(bitmap_layer_get_layer(s_hour_ones_layer),
-                  round2_digit_frame(single_hour ? 0 : 1, 0, single_hour));
-#endif
   bitmap_layer_set_bitmap(s_hour_ones_layer, s_digit_bitmaps[hour_ones]);
   bitmap_layer_set_bitmap(s_minute_tens_layer, s_digit_bitmaps[minute_tens]);
   bitmap_layer_set_bitmap(s_minute_ones_layer, s_digit_bitmaps[minute_ones]);
@@ -248,10 +243,10 @@ static void main_window_load(Window *window) {
     s_minute_tens_layer = bitmap_layer_create(GRect(padding, padding + adjusted_height, adjusted_width, adjusted_height));
     s_minute_ones_layer = bitmap_layer_create(GRect(padding + adjusted_width, padding + adjusted_height, adjusted_width, adjusted_height));
 #elif defined(PBL_PLATFORM_GABBRO)
-    s_hour_tens_layer = bitmap_layer_create(round2_digit_frame(0, 0, false));
-    s_hour_ones_layer = bitmap_layer_create(round2_digit_frame(1, 0, false));
-    s_minute_tens_layer = bitmap_layer_create(round2_digit_frame(0, 1, false));
-    s_minute_ones_layer = bitmap_layer_create(round2_digit_frame(1, 1, false));
+    s_hour_tens_layer = bitmap_layer_create(round2_digit_frame(0, 0));
+    s_hour_ones_layer = bitmap_layer_create(round2_digit_frame(1, 0));
+    s_minute_tens_layer = bitmap_layer_create(round2_digit_frame(0, 1));
+    s_minute_ones_layer = bitmap_layer_create(round2_digit_frame(1, 1));
 #elif defined(PBL_ROUND)
     // For round displays, use padding in quadrant layout
     int16_t padding = 10;

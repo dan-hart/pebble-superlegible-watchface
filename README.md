@@ -150,7 +150,7 @@ The face follows the watch’s 12/24-hour setting.
 - Pebble Time Round (Chalk) - 180x180 Color, Round
 - Pebble 2 (Diorite) - 144x168 Black & White
 - Pebble Time 2 (Emery) - 200x228 Color
-- Pebble Round 2 (Gabbro) - 260x260 Color, round. Upright digits clear the bezel by at least 8 pixels. Single-digit hours are centered above the minutes.
+- Pebble Round 2 (Gabbro) - 260x260 Color, round. Upright digits clear the bezel by at least 8 pixels. Single-digit hours align with the right-hand minute digit.
 
 **Memory Usage**:
 - Resources: 6-8KB (depending on platform)
