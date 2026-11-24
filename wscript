@@ -22,6 +22,7 @@ def build(ctx):
     build_worker = os.path.exists('worker_src')
     binaries = []
 
+    build_env = ctx.env
     for p in ctx.env.TARGET_PLATFORMS:
         ctx.set_env(ctx.all_envs[p])
         ctx.set_group(ctx.env.PLATFORM_NAME)
@@ -37,5 +38,7 @@ def build(ctx):
         else:
             binaries.append({'platform': p, 'app_elf': app_elf})
 
+    ctx.env = build_env
     ctx.set_group('bundle')
-    ctx.pbl_bundle(binaries=binaries, js=ctx.path.ant_glob('src/js/**/*.js'))
+    ctx.pbl_bundle(binaries=binaries, js=ctx.path.ant_glob('src/pkjs/**/*.js'),
+                   js_entry_file='src/pkjs/index.js')

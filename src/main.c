@@ -19,6 +19,98 @@ static BitmapLayer *s_minute_ones_layer;
 // Bitmaps for digits 0-9
 static GBitmap *s_digit_bitmaps[10];
 
+typedef struct {
+  GColor digits;
+  GColor background;
+} Palette;
+
+enum { PERSIST_PALETTE = 1 };
+static Palette s_palette;
+
+static bool palette_is_valid(Palette palette) {
+  if (palette.digits.a != 3 || palette.background.a != 3 ||
+      gcolor_equal(palette.digits, palette.background)) {
+    return false;
+  }
+#ifdef PBL_BW
+  return (gcolor_equal(palette.digits, GColorWhite) && gcolor_equal(palette.background, GColorBlack)) ||
+         (gcolor_equal(palette.digits, GColorBlack) && gcolor_equal(palette.background, GColorWhite));
+#else
+  return true;
+#endif
+}
+
+static void load_palette(void) {
+  Palette saved;
+  if (persist_read_data(PERSIST_PALETTE, &saved, sizeof(saved)) == sizeof(saved) &&
+      palette_is_valid(saved)) {
+    s_palette = saved;
+    return;
+  }
+#ifdef PBL_PLATFORM_EMERY
+  s_palette = (Palette){GColorFromHEX(0xff5500), GColorFromHEX(0x000055)};
+#else
+  s_palette = (Palette){GColorWhite, GColorBlack};
+#endif
+}
+
+static void apply_palette(void) {
+  // All digit resources use a four-entry palette. Keep each entry's edge coverage.
+  for (size_t i = 0; i < ARRAY_LENGTH(s_digit_bitmaps); ++i) {
+    if (!s_digit_bitmaps[i]) {
+      continue;
+    }
+    GColor *entries = gbitmap_get_palette(s_digit_bitmaps[i]);
+    if (entries) {
+      for (size_t j = 0; j < 4; ++j) {
+        uint8_t alpha = entries[j].a;
+        entries[j] = s_palette.digits;
+        entries[j].a = alpha;
+      }
+    }
+  }
+  BitmapLayer *layers[] = {s_hour_tens_layer, s_hour_ones_layer, s_minute_tens_layer, s_minute_ones_layer};
+  for (size_t i = 0; i < ARRAY_LENGTH(layers); ++i) {
+    bitmap_layer_set_background_color(layers[i], s_palette.background);
+    layer_mark_dirty(bitmap_layer_get_layer(layers[i]));
+  }
+  window_set_background_color(s_main_window, s_palette.background);
+}
+
+static bool read_color(Tuple *tuple, GColor *color) {
+  if (!tuple || (tuple->type != TUPLE_UINT && tuple->type != TUPLE_INT)) {
+    return false;
+  }
+  uint32_t rgb;
+  switch (tuple->length) {
+    case 1: rgb = tuple->value->uint8; break;
+    case 2: rgb = tuple->value->uint16; break;
+    case 4: rgb = tuple->value->uint32; break;
+    default: return false;
+  }
+  if (rgb > 0xffffff) {
+    return false;
+  }
+  *color = GColorFromHEX(rgb);
+  return true;
+}
+
+static void receive_colors(DictionaryIterator *message, void *context) {
+  Palette next;
+  if (!read_color(dict_find(message, MESSAGE_KEY_DigitColor), &next.digits) ||
+      !read_color(dict_find(message, MESSAGE_KEY_BackgroundColor), &next.background) ||
+      !palette_is_valid(next)) {
+    return;
+  }
+  if (gcolor_equal(next.digits, s_palette.digits) && gcolor_equal(next.background, s_palette.background)) {
+    return;
+  }
+  if (persist_write_data(PERSIST_PALETTE, &next, sizeof(next)) == sizeof(next)) {
+    s_palette = next;
+    apply_palette();
+  }
+}
+
 // Resource IDs for digit bitmaps
 #ifdef PBL_PLATFORM_EMERY
 static const uint32_t DIGIT_RESOURCE_IDS[] = {
@@ -173,25 +265,13 @@ static void main_window_load(Window *window) {
   bitmap_layer_set_compositing_mode(s_minute_tens_layer, GCompOpSet);
   bitmap_layer_set_compositing_mode(s_minute_ones_layer, GCompOpSet);
 
-#ifdef PBL_PLATFORM_EMERY
-  GColor background_color = GColorFromHEX(0x000055);
-#else
-  GColor background_color = GColorBlack;
-#endif
-
-  // Set background color for all layers
-  bitmap_layer_set_background_color(s_hour_tens_layer, background_color);
-  bitmap_layer_set_background_color(s_hour_ones_layer, background_color);
-  bitmap_layer_set_background_color(s_minute_tens_layer, background_color);
-  bitmap_layer_set_background_color(s_minute_ones_layer, background_color);
-
   // Add all layers to the window
   layer_add_child(window_layer, bitmap_layer_get_layer(s_hour_tens_layer));
   layer_add_child(window_layer, bitmap_layer_get_layer(s_hour_ones_layer));
   layer_add_child(window_layer, bitmap_layer_get_layer(s_minute_tens_layer));
   layer_add_child(window_layer, bitmap_layer_get_layer(s_minute_ones_layer));
 
-  window_set_background_color(window, background_color);
+  apply_palette();
 }
 
 // Window unload handler
@@ -210,6 +290,8 @@ static void main_window_unload(Window *window) {
 
 // Initialize the app
 static void init() {
+  load_palette();
+
   // Create main Window element
   s_main_window = window_create();
 
@@ -221,6 +303,9 @@ static void init() {
 
   // Show the Window on the watch, with animated=true
   window_stack_push(s_main_window, true);
+
+  app_message_register_inbox_received(receive_colors);
+  app_message_open(64, 16);
 
   // Register with TickTimerService for minute updates
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);

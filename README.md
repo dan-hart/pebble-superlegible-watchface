@@ -2,7 +2,7 @@
 
 A minimalist Pebble watchface focused on maximum readability using the Atkinson Hyperlegible font.
 
-![Version](https://img.shields.io/badge/version-1.0-blue)
+![Version](https://img.shields.io/badge/version-1.2-blue)
 ![Platforms](https://img.shields.io/badge/platforms-Aplite%20%7C%20Basalt%20%7C%20Chalk%20%7C%20Diorite%20%7C%20Emery-green)
 ![License](https://img.shields.io/badge/license-GPLv3-blue)
 ![GitHub stars](https://img.shields.io/github/stars/dan-hart/pebble-superlegible-watchface?style=social)
@@ -37,6 +37,7 @@ A minimalist Pebble watchface focused on maximum readability using the Atkinson 
 ### Building from Source
 
 **Prerequisites**:
+- Node.js with npm
 - Python 3.x: `brew install python`
 - UV package manager: `curl -LsSf https://astral.sh/uv/install.sh | sh`
 - Pebble SDK: `uv tool install pebble-tool`
@@ -61,6 +62,7 @@ pebble --version
 
 ```bash
 # Build the watchface
+npm ci
 pebble build
 
 # The .pbw file will be in build/
@@ -84,6 +86,7 @@ git clone https://github.com/dan-hart/pebble-superlegible-watchface.git
 cd pebble-superlegible-watchface
 
 # 2. Build
+npm ci
 pebble build
 
 # 3. Install and test on emulator
@@ -119,12 +122,14 @@ For more troubleshooting help, see `CLAUDE.md` Troubleshooting section.
 
 ## Configuration
 
-No configuration required! Superlegible automatically:
-- Detects your system time format preference (12h/24h)
-- Optimizes display for your Pebble model
-- Adapts to rectangular and round displays
+Open Superlegible’s settings gear in the Pebble phone app, pick **Digits** and
+**Background**, then tap **Save**. Color watches offer the Pebble color palette.
+Monochrome watches offer black and white. Choose two different colors so the
+time stays visible.
 
-Your Pebble's time format setting (in Date & Time settings) is automatically respected.
+The Time 2 starts with orange digits on navy. Other models start with white
+digits on black. The watch remembers your selection when the phone is offline.
+The face follows the watch’s 12/24-hour setting.
 
 ## Technical Details
 
@@ -165,7 +170,7 @@ pebble-superlegible-watchface/
 │   └── banner/         # Banner generation tools
 ├── Design/             # GIMP design files and mockups
 ├── archive/            # Archived experimental code
-├── appinfo.json        # App metadata
+├── package.json        # App metadata and settings dependency
 ├── wscript             # Build configuration
 ```
 

@@ -21,9 +21,9 @@ If you discover any secrets accidentally committed to this repository, please re
 The Superlegible watchface is designed with minimal permissions:
 
 - **No network access**: The watchface does not connect to the internet
-- **No data collection**: No user data is collected, stored, or transmitted
+- The phone app stores the selected colors per watch and sends them to the paired watch over Bluetooth. The watch stores its palette locally.
 - **No sensitive permissions**: Only basic time display functionality
-- **No external dependencies**: Runs entirely on-device using Pebble SDK APIs
+- The phone settings page includes a bundled copy of Clay and works offline.
 - **Open source**: All code is publicly auditable
 
 ## Supported Versions

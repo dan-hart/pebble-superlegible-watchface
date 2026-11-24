@@ -90,8 +90,8 @@ def rgba_pixels(path):
 
 class PebbleTime2LayoutTest(unittest.TestCase):
     def setUp(self):
-        with (ROOT / "appinfo.json").open() as file:
-            self.appinfo = json.load(file)
+        with (ROOT / "package.json").open() as file:
+            self.appinfo = json.load(file)["pebble"]
         self.media = {
             resource["name"]: resource
             for resource in self.appinfo["resources"]["media"]

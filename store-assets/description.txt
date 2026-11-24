@@ -7,6 +7,7 @@ KEY FEATURES:
 • Maximum Size Display - Time displayed as large as possible for instant readability
 • Ultimate Simplicity - Just the time, nothing else to distract
 • Universal Compatibility - Works perfectly on all 5 Pebble platforms (Aplite, Basalt, Chalk, Diorite, Emery)
+• Custom colors - Choose digit and background colors in the Pebble phone app. Monochrome watches support white on black or black on white.
 • Automatic Time Format - Respects your 12h/24h preference automatically
 • Battery Efficient - Updates only once per minute for maximum battery life
 • High Contrast - White-on-black design for optimal visibility in all lighting conditions

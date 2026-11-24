@@ -334,7 +334,14 @@ for FILE in $FILES; do
     # Check for high-entropy base64 strings (potential encoded secrets)
     # Only in non-binary, non-image files
     if [[ ! "$FILE" =~ \.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ ]]; then
-        BASE64_MATCHES=$(grep -n -o -E "$BASE64_PATTERN" "$FILE" 2>/dev/null || true)
+        # npm records SHA-512 tarball digests in its lockfile. Only omit complete
+        # integrity fields from this heuristic. The credential scan above sees every line.
+        if [[ "$FILE" == "package-lock.json" ]]; then
+            BASE64_MATCHES=$(sed -E 's/^[[:space:]]*"integrity":[[:space:]]*"sha512-[A-Za-z0-9+\/]{86}==",?[[:space:]]*$//' "$FILE" |
+                grep -n -o -E "$BASE64_PATTERN" || true)
+        else
+            BASE64_MATCHES=$(grep -n -o -E "$BASE64_PATTERN" "$FILE" 2>/dev/null || true)
+        fi
         if [ -n "$BASE64_MATCHES" ]; then
             while IFS= read -r match; do
                 # Extract just the base64 string (after line number)
